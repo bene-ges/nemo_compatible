@@ -1,2 +1,2 @@
 # nemo_compatible
-useful things that work with nemo library
+Useful things that work with NVIDIA NeMo library
