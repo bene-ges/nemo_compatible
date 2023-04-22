@@ -1,7 +1,7 @@
-#Useful things that work with NVIDIA NeMo library
+# Useful things that work with NVIDIA NeMo library
 
-##Tutorials
+## Tutorials
 - `notebooks/Russian_TTS_with_IPA_G2P_FastPitch_and_HifiGAN.ipynb` - inference pipeline for Russian TTS (G2P + FastPitch + HifiGAN) loading pretrained models from HuggingFace
 
-##Recipes
-- `scripts/tts/ru_ipa_fastpitch_hifigan\train.sh`
+## Recipes
+- `scripts/tts/ru_ipa_fastpitch_hifigan/train.sh`
