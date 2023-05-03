@@ -1,6 +1,7 @@
 import re
 
 from argparse import ArgumentParser
+from random import random
 
 from utils import (
     clean_russian_g2p_trascription,
@@ -13,6 +14,7 @@ parser.add_argument("--input_name", type=str, required=True, help="Input file wi
 parser.add_argument("--g2p_name", type=str, required=True, help="Results of g2p, each unique word on a separate line")
 parser.add_argument("--heteronyms_name", type=str, required=True, help="Text file with words that can have different transcriptions, they will be kept as graphemes")
 parser.add_argument("--g2p_correct_name", type=str, required=True, help="Text file with words and transcriptions that override g2p output")
+parser.add_argument("--keep_grapheme_ratio", type=float, default=0.0, help="Ratio of cases when graphematic word is kept")
 parser.add_argument("--output_name", type=str, required=True, help="Output file with input to tts")
 
 args = parser.parse_args()
@@ -22,7 +24,6 @@ with open(args.heteronyms_name, "r", encoding="utf-8") as f:
     for line in f:
         inp = line.strip()
         heteronyms.add(inp)
-
 
 g2p_vocab = {}
 
@@ -62,7 +63,7 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
             w = text[begin:end]
             if w in heteronyms:
                 phonemized_text += w
-            elif w in g2p_vocab:
+            elif w in g2p_vocab and random() >= args.keep_grapheme_ratio:
                 phonemized_text += clean_russian_g2p_trascription(g2p_vocab[w])
             else:  # shouldn't go here as all words are expected to pass through g2p
                 phonemized_text += w
