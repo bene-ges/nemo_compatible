@@ -22,6 +22,7 @@ def clean_russian_text_for_tts(text: str) -> str:
     result = result.replace("\u2026", ".")  # horizontal ellipsis
     result = result.replace("\u00ab", "\"")  # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
     result = result.replace("\u00bb", "\"")  # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+    result = result.replace("\u2019", "'")  # ’ Right Single Quotation Mark
     result = result.replace("\u201c", "\"")  # “ Left Double Quotation Mark
     result = result.replace("\u201d", "\"")  # ” Right Double Quotation Mark
     result = result.replace("\u201e", "\"")  # „ Double Low-9 Quotation Mark

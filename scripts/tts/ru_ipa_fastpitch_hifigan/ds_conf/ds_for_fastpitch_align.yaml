@@ -1,0 +1,36 @@
+name: "ds_for_fastpitch_align"
+
+manifest_filepath: "train_manifest.json"
+sup_data_path: "sup_data"
+sup_data_types: [ "align_prior_matrix", "pitch" ]
+
+dataset:
+  _target_: nemo.collections.tts.data.dataset.TTSDataset
+  manifest_filepath: ${manifest_filepath}
+  sample_rate: 22050
+  sup_data_path: ${sup_data_path}
+  sup_data_types: ${sup_data_types}
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 256
+  window: "hann"
+  n_mels: 80
+  lowfreq: 0
+  highfreq: null
+  max_duration: null
+  min_duration: 0.1
+  ignore_file: null
+  trim: true
+  trim_top_db: 50
+  trim_frame_length: ${dataset.win_length}
+  trim_hop_length: ${dataset.hop_length}
+  pitch_fmin: 65.40639132514966
+  pitch_fmax: 2093.004522404789
+
+  text_tokenizer:
+    _target_: nemo.collections.common.tokenizers.text_to_speech.tts_tokenizers.BaseCharsTokenizer
+    chars: ["ʲ","ː","ə","ɪ","ɐ","ɨ","a","ʊ","i","o","u","e","ʉ","æ","ɵ","ɛ","v","r","m","t","p","s","n","ʂ","k","f","l","z","ɫ","b","d","j","ɕ","x","ɡ","ʐ","а","е","ё","и","о","у","ы","э","ю","я","б","в","г","д","ж","з","й","к","л","м","н","п","р","с","т","ф","х","ц","ч","ш","щ","ъ","ь"]
+    non_default_punct_list: [',','.','!','?','-',':',';','/','"','(',')','[',']','{','}',"`"]
+    punct: true
+    apostrophe: true
+    pad_with_space: true
