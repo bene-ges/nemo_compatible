@@ -1,17 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+NEMO_COMPATIBLE_PATH=nemo_compatible
 
 ## Wikipedia titles taken from YAGO corpus. Preparation of this file is described in preprocess_yago.sh.
 ## Format: original title, and clean
@@ -65,7 +52,7 @@ GTN_REFERENCE_VOCAB=gtn_reference_vocab.filt
 ## emmanuel episcopal church       13.586499828372018      4
 ## cornewall       13.586499828372018      4
 ## george bryan    13.586499828372018      4
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_idf_from_yago_wiki.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_idf_from_yago_wiki.py \
   --input_folder ${WIKIPEDIA_FOLDER} \
   --exclude_titles_file ${EXCLUDE_TITLES} \
   --yago_entities_file ${YAGO_ENTITIES} \
@@ -77,7 +64,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ## gelclair;undiluted      Gelclair is usually used 3 times a day or as needed. It is usually diluted with water and rinsed around the mouth. It can be used undiluted where no water is available, and applied directly.
 ## gelclair;painkillers;mucositis       Gelclair does not numb the mouth and can be used in conjunction with other treatment options for managing oral mucositis, including antibacterial mouthwashes and painkillers.
 ## geographic coordinate conversion;geodetic datum      In geodesy, geographic coordinate conversion is defined as translation among different coordinate formats or map projections all referenced to the same geodetic datum. A geographic coordinate transformation is a translation among different geodetic datums. Both geographic coordinate conversion and transformation will be considered in this article.
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_sentences_from_yago_wiki.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_sentences_from_yago_wiki.py \
   --input_folder ${WIKIPEDIA_FOLDER} \
   --exclude_titles_file ${EXCLUDE_TITLES} \
   --yago_entities_file ${YAGO_ENTITIES} \
@@ -88,7 +75,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ## Take a sample from 10 Gb yago_wiki.txt file.
 ## Sampling is controlled by parameters --each_n_line (skip other) and --max_count (skips paragraph if all its phrases already occured at least as many times)
 ## Phrase lists and paragraphs are written to separate files with equal number of lines 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/sample_phrases.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/sample_phrases.py \
   --input_name yago_wiki.txt \
   --max_count 10 \
   --each_n_line 30 \ 
@@ -96,7 +83,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
   --output_paragraphs_name yago_wiki_sample.paragraphs
 
 ## Normalize paragraphs using substitution by GTN vocabulary (fast and simple).
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/normalize_by_gtn_vocab.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/normalize_by_gtn_vocab.py \
   --input_file yago_wiki_sample.paragraphs \
   --output_file yago_wiki_sample.paragraphs.norm \
   --tn_vocab ${GTN_REFERENCE_VOCAB}
@@ -108,7 +95,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ## This is not ideal, but will provide randomness which is not bad.
 ## Because the goal is not to find all related phrases but some of them to serve as negative candidates
 ## ATTENTION: while indexing we use much stricter logprob threshold than at inference (because of too many phrases)
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/index_phrases.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/index_phrases.py \
   --input_file ${SUBMISSPELLS} \
   --output_file index.txt \
   --ngram_mapping ${NGRAM_MAPPINGS} \
@@ -120,7 +107,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ## ATTENTION: edit depending on how many portions you get 
 for part in "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13"
 do
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_related_phrases.py --input_file index.txt.${part} --output_file related_phrases.${part}.txt
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_related_phrases.py --input_file index.txt.${part} --output_file related_phrases.${part}.txt
 done
 
 cat related_phrases.*.txt > related_phrases.txt
@@ -143,20 +130,20 @@ cat related_phrases.*.txt > related_phrases.txt
 
 ## Collect frequent word n-grams from plain text of paragraphs. They will be later compared to target phrases to sample false positive candidates.  
 ## Output is split into 5 files - each for different n-gram length.
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_ngrams_from_yago_wiki.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_ngrams_from_yago_wiki.py \
   --input_file yago_wiki_sample.paragraphs.norm \
   --output_file frequent_ngrams \
   --min_freq 50 \
   --max_ngram_len 5
 
 ## Get list of all target phrases with their frequencies (counts one occurrence per paragraph).
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_actual_phrases.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_actual_phrases.py \
   --input_file yago_wiki_sample.phrases \
   --output_file actual_phrases.txt
 
 for part in "1" "2" "3" "4" "5"
 do
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/index_phrases.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/index_phrases.py \
       --input_file frequent_ngrams.${part} \
       --output_file index.txt \
       --ngram_mapping ${NGRAM_MAPPINGS} \
@@ -166,7 +153,7 @@ do
       --input_portion_size 100000 \
       --input_max_lines 100000
 
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_candidates.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_candidates.py \
       --index_file index.txt.0 \
       --input_file actual_phrases.txt \ 
       --output_file candidates.${part}.txt \ 
@@ -191,7 +178,7 @@ cat candidates.*.txt > reverse_frequent_ngrams_candidates.txt
 
 ## Search phrases in the paragraph, cut spans containing some phrase(s) and some surrounding context.
 ## Two outputs: 1) examples with at least 1 correct candidate, 2) examples with no correct candidates.
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/get_fragments_from_yago_wiki.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_fragments_from_yago_wiki.py \
   --input_phrases_file yago_wiki_sample.phrases \
   --input_paragraphs_file yago_wiki_sample.paragraphs.norm \
   --output_file_non_empty fragments_non_empty.txt \
@@ -209,7 +196,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ##   its thirty years of television broadcasting on  0
 
 ## Add misspells and 10 candidates via different sampling
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/construct_positive_and_negative_examples.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/construct_positive_and_negative_examples.py \
   --non_empty_fragments_file fragments_non_empty.txt \
   --empty_fragments_file fragments_empty.txt \
   --related_phrases_file related_phrases.txt \
@@ -229,7 +216,7 @@ python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_prepara
 ##   assistant offensive coach for penn      *vasile stanescu;*jessica stern;*tet offensive;*pend;*dunsbach ferry;*hambach forest;*poochhe;*may offensive;*sven oftedal;*jessie stanton
 
 ## Make training examples as expected by the neural model.
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/make_final_training_examples.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/make_final_training_examples.py \
   --positive_file positive.txt \
   --negative_file negative.txt \
   --output_file all.tsv

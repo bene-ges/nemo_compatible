@@ -1,21 +1,6 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 ## You can use any other G2P model instead of this, just see the expected output format. 
 
-NEMO_PATH=/home/aleksandraa/nemo
+NEMO_PATH=NeMo
 
 PRETRAINED_MODEL=g2p_tagging.nemo
 
@@ -30,7 +15,7 @@ python ${NEMO_PATH}/examples/nlp/text_normalization_as_tagging/normalization_as_
   inference.batch_size=256 \
   lang=en
 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_input_for_tts.py --yago_input_name yago.uniq3 --phonematic_name yago.vocab.to_cmu.output --output_name tts_input.txt
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_tts.py --yago_input_name yago.uniq3 --phonematic_name yago.vocab.to_cmu.output --output_name tts_input.txt
 
 ## tts_input.txt should have the following format (space is also a phoneme)
 ##aadityana       AA0,AA2,D,AH0,T,Y,AE1,N,AH0

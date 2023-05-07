@@ -1,27 +1,12 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-NEMO_PATH=/home/aleksandraa/nemo
+NEMO_PATH=NeMo
 
 ALIGNMENT_DIR=align
 ## path to GIZA++ and mkcls binaries
-GIZA_BIN_DIR=/home/aleksandraa/programs/giza-pp/GIZA++-v2
-MCKLS_BINARY=/home/aleksandraa/programs/giza-pp/mkcls-v2/mkcls
+GIZA_BIN_DIR=giza-pp/GIZA++-v2
+MCKLS_BINARY=giza-pp/mkcls-v2/mkcls
 
 mkdir ${ALIGNMENT_DIR}
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_input_for_giza.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_giza.py \
   --input_manifest pred_ctc.all.json \
   --output_name giza_input.txt \
   --out_dir=${ALIGNMENT_DIR} \
@@ -37,12 +22,12 @@ cd ${ALIGNMENT_DIR}
 ./run.sh
 cd ..
 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_corpora_after_alignment.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
   --mode=extract_giza_alignments \
   --input_name=${ALIGNMENT_DIR} \
   --output_name=${ALIGNMENT_DIR}/align.out
 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_corpora_after_alignment.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
   --mode=get_replacement_vocab \
   --input_name=${ALIGNMENT_DIR}/align.out \
   --output_name=replacement_vocab_full.txt
@@ -59,7 +44,7 @@ awk 'BEGIN {FS="\t"}($3 / $4 > 0.005){print $0}' < replacement_vocab_full.txt > 
 ## a u t o    o <DELETE> t o  67      3790    1406
 
 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/prepare_corpora_after_alignment.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
   --mode=get_sub_misspells \
   --input_name=${ALIGNMENT_DIR}/align.out \
   --output_name=sub_misspells.txt

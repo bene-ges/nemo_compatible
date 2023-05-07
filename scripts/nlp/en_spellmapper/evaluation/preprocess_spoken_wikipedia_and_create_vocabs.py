@@ -1,18 +1,3 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 """
 This script can be used to preprocess Spoken Wikipedia corpus before running ctc-segmentation.
 The input folder consists of subfolders with following stricture
@@ -42,6 +27,10 @@ import os
 import re
 from collections import defaultdict
 
+from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
+    replace_diacritics,
+)
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--input_folder", required=True, type=str, help="Input folder in which each subfolder contains an article"
@@ -50,26 +39,6 @@ parser.add_argument(
     "--destination_folder", required=True, type=str, help="Destination folder with audio and text subfolder"
 )
 args = parser.parse_args()
-
-
-def replace_diacritics(text):
-    text = re.sub(r"[éèëēêęěė]", "e", text)
-    text = re.sub(r"[ãâāáäăâàąåạả]", "a", text)
-    text = re.sub(r"[úūüùưûů]", "u", text)
-    text = re.sub(r"[ôōóöõòő]", "o", text)
-    text = re.sub(r"[ćçč]", "c", text)
-    text = re.sub(r"[ïīíîıì]", "i", text)
-    text = re.sub(r"[ñńňņ]", "n", text)
-    text = re.sub(r"[țť]", "t", text)
-    text = re.sub(r"[łľ]", "l", text)
-    text = re.sub(r"[żžź]", "z", text)
-    text = re.sub(r"[ğ]", "g", text)
-    text = re.sub(r"[ř]", "r", text)
-    text = re.sub(r"[ý]", "y", text)
-    text = re.sub(r"[æ]", "ae", text)
-    text = re.sub(r"[œ]", "oe", text)
-    text = re.sub(r"[șşšś]", "s", text)
-    return text
 
 
 def get_audio(name, n):

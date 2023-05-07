@@ -1,20 +1,5 @@
 #!/bin/bash
-
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-NEMO_PATH=/home/aleksandraa/nemo
+NEMO_PATH=NeMo
 
 ## Spellchecking model in nemo format, that you get after training. See run_training.sh or run_training_tarred.sh  
 PRETRAINED_MODEL=training.nemo
@@ -27,7 +12,7 @@ SUB_MISSPELLS=sub_misspells.txt
 ## It is generated during dataset_preparation/build_training_data.sh
 IDF=idf.txt
 
-DATA_DIR="/home/aleksandraa/data/kensho"
+DATA_DIR="data/kensho"
 
 ## To get the dataset, you need to fill the form at
 ##     https://datasets.kensho.com/datasets/spgispeech
@@ -69,7 +54,7 @@ python ${NEMO_PATH}/nemo_text_processing/text_normalization/normalize.py \
 ## Make manifest file in NeMo format and imitate custom vocabularies.
 mkdir ${DATA_DIR}/vocabs
 mkdir ${DATA_DIR}/manifests
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/preprocess_kensho_and_create_vocabs.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/preprocess_kensho_and_create_vocabs.py \
   --input_folder ${DATA_DIR}/spgispeech/val \
   --destination_folder ${DATA_DIR}/vocabs \
   --transcription_file ${DATA_DIR}/val.csv \
@@ -95,11 +80,11 @@ python ${NEMO_PATH}/examples/asr/transcribe_speech.py \
   batch_size=16
 
 ## Remove all occurences of "um" and "uh" from transcriptions, because they are absent in the reference text.
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/remove_uh_um_from_manifest.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/remove_uh_um_from_manifest.py \
   --input_manifest ${DATA_DIR}/manifests/manifest_ctc.json \
   --output_manifest ${DATA_DIR}/manifests/manifest_ctc_without_uh_um.json
 
-python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/remove_uh_um_from_manifest.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/remove_uh_um_from_manifest.py \
   --input_manifest ${DATA_DIR}/manifests/manifest_transducer.json \
   --output_manifest ${DATA_DIR}/manifests/manifest_transducer_without_uh_um.json
 
@@ -133,14 +118,14 @@ do
 
     ## Split ASR output transcriptions into shorter fragments to serve as ASR hypotheses for spellchecking model
     mkdir ${DATA_DIR}/hypotheses_${ASRTYPE}
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/extract_asr_hypotheses.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/extract_asr_hypotheses.py \
       --manifest ${DATA_DIR}/manifests/manifest_${ASRTYPE}.json \
       --folder ${DATA_DIR}/hypotheses_${ASRTYPE}
 
     ## Prepare inputs for inference of neural customization spellchecking model
     mkdir ${DATA_DIR}/spellchecker_input_${ASRTYPE}
     mkdir ${DATA_DIR}/spellchecker_output_${ASRTYPE}
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/prepare_input_for_spellchecker_inference.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/prepare_input_for_spellchecker_inference.py \
       --hypotheses_folder ${DATA_DIR}/hypotheses_${ASRTYPE} \
       --vocabs_folder ${DATA_DIR}/vocabs \
       --output_folder ${DATA_DIR}/spellchecker_input_${ASRTYPE} \
@@ -160,7 +145,7 @@ do
       lang=en
 
     ## Postprocess and combine spellchecker results into a single manifest
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/update_transcription_with_spellchecker_results.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/update_transcription_with_spellchecker_results.py \
       --asr_hypotheses_folder ${DATA_DIR}/hypotheses_${ASRTYPE} \
       --spellchecker_inputs_folder ${DATA_DIR}/spellchecker_input_${ASRTYPE} \
       --spellchecker_results_folder ${DATA_DIR}/spellchecker_output_${ASRTYPE} \
@@ -184,7 +169,7 @@ do
       only_score_manifest=True
 
     ## Perform error analysis and create "ideal" spellchecker results for comparison
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/analyze_custom_ref_vs_asr.py \
+    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/analyze_custom_ref_vs_asr.py \
       --manifest ${DATA_DIR}/manifests/manifest_${ASRTYPE}_corrected.json \
       --vocab_dir ${DATA_DIR}/vocabs \
       --input_dir ${DATA_DIR}/spellchecker_input_${ASRTYPE} \
