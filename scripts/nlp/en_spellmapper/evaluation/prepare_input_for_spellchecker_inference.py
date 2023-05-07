@@ -168,7 +168,17 @@ for name in os.listdir(args.hypotheses_folder):
             if len(candidates) != 10:
                 print("WARNING: cannot get 10 candidates", candidates)
                 continue
-            out.write(" ".join(letters) + "\t" + ";".join([x[0] for x in candidates]) + "\n")
+
+            targets = []
+            span_info = []
+            for idx, c in enumerate(candidates):
+                if c[1] == -1:
+                    continue
+                targets.append(str(idx + 1))  # targets are 1-based
+                span_info.append("CUSTOM " + str(c[1]) + " " + str(c[1] + c[2]))  # start/end positions
+
+            out.write(" ".join(letters) + "\t" + ";".join([x[0] for x in candidates])  + "\t" + " ".join(targets) + "\t" + ";".join(span_info) + "\n")
+
             info = ""
             for cand, begin, length, cov, real_cov in candidates:
                 info += cand + "|" + str(begin) + "|" + str(length) + "|" + str(cov) + "|" + str(real_cov) + ";"
