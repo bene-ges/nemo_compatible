@@ -49,7 +49,7 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/tts/ru_g2p_ipa/preprocess_text_before_tts
   --keep_grapheme_ratio 0.15
 
 ## Combine audio paths, preprocessed and original text into a manifest
-python ${NEMO_COMPATIBLE_PATH}/scripts/tts/ru_g2p_ipa/create_manifest_for_tts.py \
+python ${NEMO_COMPATIBLE_PATH}/scripts/tts/utils/create_manifest_for_tts.py \
   --orig_text_name marks.plain.txt \
   --preprocessed_text_name marks.g2p.txt \
   --audio_paths_name marks.audio.txt \
