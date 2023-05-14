@@ -11,6 +11,7 @@ parser.add_argument("--output_dir", type=str, required=True, help="Output dir wi
 parser.add_argument("--output_manifest", type=str, required=True, help="Output manifest file")
 parser.add_argument("--spec_generator", type=str, required=True, help="Path to .nemo checkpoint of spectrogram generator, e.g. FastPitch.nemo")
 parser.add_argument("--vocoder", type=str, required=True, help="Path to .nemo checkpoint of vocoder, e.g. HifiGan.nemo")
+parser.add_argument("--sample_rate", type=int, default=22050, help="Output sample rate")
 
 args = parser.parse_args()
 
@@ -44,7 +45,7 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
 
         # Note that vocoder return a batch of audio. In this example, we just take the first and only sample.
         filename = args.output_dir + "/" + str(lid) + ".wav"
-        sf.write(filename, audio.to('cpu').detach().numpy()[0], 22050)
+        sf.write(filename, audio.to('cpu').detach().numpy()[0], args.sample_rate)
         # {"audio_filepath": "tts/1.wav", "text": "ndimbati"}
         out_manifest.write(
             "{\"audio_filepath\": \"" + filename + "\", \"text\": \"" + inp + "\"}\n"
