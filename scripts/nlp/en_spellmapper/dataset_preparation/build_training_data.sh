@@ -1,5 +1,7 @@
 NEMO_COMPATIBLE_PATH=nemo_compatible
 
+git clone https://huggingface.co/datasets/bene-ges/en_gtn_vocab
+
 ## Wikipedia titles taken from YAGO corpus. Preparation of this file is described in preprocess_yago.sh.
 ## Format: original title, and clean
 ##    Żywkowo,_Podlaskie_Voivodeship         zywkowo_podlaskie_voivodeship
@@ -40,7 +42,7 @@ NGRAM_MAPPINGS=replacement_vocab_filt.txt
 ## DATE    nineteen eighties       nineteen eighties       1
 ## CARDINAL        four hundred    400     28999
 ## CARDINAL        four hundred    400,    19
-GTN_REFERENCE_VOCAB=gtn_reference_vocab.filt
+GTN_REFERENCE_VOCAB=en_gtn_vocab/en_gtn_vocab.txt
 
 ## Generate a file with IDF (inverse document frequencies) for words and short phrases.
 ## It is used in later steps to filter out frequent phrases.
