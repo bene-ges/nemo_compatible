@@ -62,7 +62,8 @@ def read_hypotheses_and_candidates(hypotheses_filename, candidates_filename):
         raise (ValueError, "number of lines doesn't match in " + hypotheses_filename + " and " + candidates_filename)
     for i in range(len(hypotheses_lines)):
         s = hypotheses_lines[i]
-        hyp, _ = s.strip().split("\t")
+        parts = s.strip().split("\t")
+        hyp = parts[0]
         hyp = hyp.replace(" ", "").replace("_", " ")
         candidates = candidates_lines[i].strip().split(";")
         for c in candidates:
@@ -137,8 +138,8 @@ with open(args.output_name, "w", encoding="utf-8") as out:
         ref_sent = " " + ref_text[i] + " "
         after_sent = " " + pred_text[i] + " "
         before_sent = after_sent
-        if "before_spell_pred" in test_data[i]:
-            before_sent = " " + test_data[i]["before_spell_pred"] + " "
+        if "pred_text_before_correction" in test_data[i]:
+            before_sent = " " + test_data[i]["pred_text_before_correction"] + " "
 
         for phrase in sorted(vocab, key=lambda x: len(x), reverse=True):
             phrase_id = phrase2id[phrase]
@@ -211,7 +212,7 @@ with open(args.output_name, "w", encoding="utf-8") as out:
 
         test_data[i]["pred_text"] = ideal_spellchecked_sent.strip()
         # we need this field for "ideal" manifest even if it did not existed before
-        test_data[i]["before_spell_pred"] = before_sent.strip()
+        test_data[i]["pred_text_before_correction"] = before_sent.strip()
 
         out.write(doc_id + "\t" + "ref_sent=\t" + ref_sent + "\n")
         out.write(doc_id + "\t" + "after_sent=\t" + after_sent + "\n")

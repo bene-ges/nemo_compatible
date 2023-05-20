@@ -58,5 +58,5 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/pr
 
 ## This file will be used later during synthetic data generation to use not only Wikipedia titles as whole phrases, but also their parts.
 
-
+awk 'BEGIN {FS="\t"}{print $1 "\t" $4}' < sub_misspells.txt > big_sample.txt
 

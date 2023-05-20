@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from os.path import join
 
 from tqdm.auto import tqdm
+from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
 
 parser = ArgumentParser(description="Prepare input for GIZA")
 parser.add_argument("--input_manifest", required=True, type=str, help='Path to manifest file')
@@ -13,16 +14,6 @@ parser.add_argument("--giza_dir", type=str, required=True, help="Path to folder 
 parser.add_argument("--mckls_binary", type=str, required=True, help="Path to mckls binary")
 
 args = parser.parse_args()
-
-
-def read_manifest(path):
-    manifest = []
-    with open(path, 'r') as f:
-        for line in tqdm(f, desc="Reading manifest data"):
-            line = line.replace("\n", "")
-            data = json.loads(line)
-            manifest.append(data)
-    return manifest
 
 
 with open(join(args.out_dir, "run.sh"), "w") as out:

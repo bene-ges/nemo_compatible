@@ -1,3 +1,9 @@
+"""This script is used to correct a bug with multible space, observed in ASR results produced by Conformer-CTC.
+Probably connected with this issue: https://github.com/NVIDIA/NeMo/issues/4034.
+
+Since future post-processing relies on words to be separated by single space, we need to correct the manifests.
+"""
+
 import argparse
 import json
 
@@ -15,9 +21,8 @@ args = parser.parse_args()
 test_data = read_manifest(args.input_manifest)
 
 for i in range(len(test_data)):
-    test_data[i]["pred_text"] = test_data[i]["pred_text"].replace(" um ", " ").replace(" uh ", " ")
-    if test_data[i]["pred_text"].startswith("um ") or test_data[i]["pred_text"].startswith("uh "):
-        test_data[i]["pred_text"] = test_data[i]["pred_text"][3:]
+    # if there are multiple spaces in the string they will be merged to one
+    test_data[i]["pred_text"] = " ".join(test_data[i]["pred_text"].split())
 
 with open(args.output_manifest, "w", encoding="utf-8") as out:
     for d in test_data:

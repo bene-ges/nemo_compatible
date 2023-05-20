@@ -2,22 +2,12 @@ import json
 from argparse import ArgumentParser
 from collections import defaultdict
 
-from tqdm.auto import tqdm
+from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
 
 parser = ArgumentParser(description="Extract shorter ASR hypotheses for spellchecker customization")
 parser.add_argument("--manifest", required=True, type=str, help='Path to manifest file')
 parser.add_argument("--folder", required=True, type=str, help='Path to output folder')
 args = parser.parse_args()
-
-
-def read_manifest(path):
-    manifest = []
-    with open(path, 'r') as f:
-        for line in tqdm(f, desc="Reading manifest data"):
-            line = line.replace("\n", "")
-            data = json.loads(line)
-            manifest.append(data)
-    return manifest
 
 
 def save_hypotheses(hypotheses, doc_id):
@@ -46,6 +36,8 @@ for data in test_data:
 
 doc2hypotheses = defaultdict(list)
 for sent, path, doc_id in zip(pred_texts, audio_filepaths, doc_ids):
+    if "  " in sent:
+        raise ValueError("found multiple space in: " + sent)
     words = sent.split()
     for i in range(0, len(words), 2):
         short_sent = " ".join(words[i : i + 10])

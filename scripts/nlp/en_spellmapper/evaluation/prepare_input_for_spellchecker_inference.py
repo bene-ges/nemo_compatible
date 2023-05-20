@@ -16,10 +16,10 @@ parser.add_argument("--vocabs_folder", type=str, required=True, help="Path to in
 parser.add_argument("--output_folder", type=str, required=True, help="Output folder")
 parser.add_argument("--ngram_mappings", type=str, required=True, help="Path to ngram mappings vocabulary")
 parser.add_argument(
-    "--sub_misspells_file",
+    "--big_sample_file",
     required=True,
     type=str,
-    help="File with misspells from which only keys will be used to sample dummy candidates",
+    help="File from which keys will be used to sample dummy candidates",
 )
 parser.add_argument("--debug", action='store_true', help="Whether to create files with debug information")
 
@@ -42,10 +42,10 @@ print("done.")
 
 print("load big sample of phrases...")
 big_sample_of_phrases = set()
-with open(args.sub_misspells_file, "r", encoding="utf-8") as f:
+with open(args.big_sample_file, "r", encoding="utf-8") as f:
     for line in f:
-        phrase, _, _, src_freq, dst_freq = line.strip().split("\t")
-        if int(src_freq) > 50:  # do not want to use frequent phrases as dummy candidates
+        phrase, freq = line.strip().split("\t")
+        if int(freq) > 50:  # do not want to use frequent phrases as dummy candidates
             continue
         if len(phrase) < 6 or len(phrase) > 15:  # do not want to use too short or too long phrases as dummy candidates
             continue
@@ -104,7 +104,7 @@ for name in os.listdir(args.hypotheses_folder):
                     if len(position2ngrams[pos]) > 0:
                         out_debug.write("\t\t" + str(pos) + "\t" + "|".join(list(position2ngrams[pos])) + "\n")
 
-            # mask for each custom phrase, how many which symbols are covered by input ngrams
+            # mask for each custom phrase, how many of its characters are covered by input ngrams
             phrases2coveredsymbols = [[0 for x in phrases[i].split(" ")] for i in range(len(phrases))]
             candidates = []
             k = 0
@@ -169,6 +169,8 @@ for name in os.listdir(args.hypotheses_folder):
                 print("WARNING: cannot get 10 candidates", candidates)
                 continue
 
+            # We add two columns with targets and span_info. 
+            # They have same format as during training, but start and end positions are APPROXIMATE, they will be adjusted when constructing BertExample.
             targets = []
             span_info = []
             for idx, c in enumerate(candidates):
