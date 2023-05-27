@@ -1,4 +1,4 @@
-"""This script is used to correct a bug with multible space, observed in ASR results produced by Conformer-CTC.
+"""This script is used to correct a bug with multiple space, observed in ASR results produced by Conformer-CTC.
 Probably connected with this issue: https://github.com/NVIDIA/NeMo/issues/4034.
 
 Since future post-processing relies on words to be separated by single space, we need to correct the manifests.
@@ -6,8 +6,6 @@ Since future post-processing relies on words to be separated by single space, we
 
 import argparse
 import json
-
-from tqdm.auto import tqdm
 
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
 

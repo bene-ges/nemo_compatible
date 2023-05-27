@@ -75,7 +75,7 @@ def read_hypotheses_and_candidates(hypotheses_filename, candidates_filename):
     return candidates2hypotheses
 
 
-joint_vocab, src_vocab, dst_vocab, max_len = load_ngram_mappings_for_dp(args.ngram_mappings)
+joint_vocab, orig_vocab, misspelled_vocab, max_len = load_ngram_mappings_for_dp(args.ngram_mappings)
 
 custom_vocabs = {}  # key=doc_id, value=tuple(set of phrases, phrase2id, id2phrase)
 for name in os.listdir(args.vocab_dir):
@@ -342,10 +342,7 @@ for k, v in diff_vocab_before_after_spellcheck.most_common(1000000):
     path = get_alignment_by_dp(
         " ".join(list(k[2].replace(" ", "_"))),
         " ".join(list(k[1].replace(" ", "_"))),
-        joint_vocab,
-        src_vocab,
-        dst_vocab,
-        max_len,
+        dp_data=(joint_vocab, orig_vocab, misspelled_vocab, max_len)
     )
     if k[3] == "!":
         sum_better += v
@@ -366,7 +363,7 @@ for k, v in diff_vocab_before_after_spellcheck.most_common(1000000):
         "; av_score=",
         path[-1][3] / (0.001 + len(k[1])),
     )
-    for hyp_ngram, ref_ngram, score, sum_score, joint_freq, src_freq, dst_freq in path:
+    for hyp_ngram, ref_ngram, score, sum_score, joint_freq, orig_freq, misspelled_freq in path:
         print(
             "\t",
             "hyp=",
@@ -378,6 +375,6 @@ for k, v in diff_vocab_before_after_spellcheck.most_common(1000000):
             "; sum_score=",
             sum_score,
             joint_freq,
-            src_freq,
-            dst_freq,
+            orig_freq,
+            misspelled_freq,
         )

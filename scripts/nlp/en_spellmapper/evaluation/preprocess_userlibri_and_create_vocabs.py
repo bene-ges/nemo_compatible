@@ -115,19 +115,6 @@ def extract_custom_phrases(text, idf):
             continue
         if w.startswith("'") or w.endswith("'"):
             continue
-        if "'" in w:
-            continue
-        if (
-            w.endswith("ed")
-            or w.endswith("ing")
-            or w.endswith("'d")
-            or w.endswith("in")
-            or w.endswith("'s")
-            or w.endswith("es")
-            or w.endswith("ly")
-        ):
-            continue
-
         if re.match(r"^[a-z\-']+$", w):  # check that a string only contains letters, apostrophe or hyphen
             if w not in idf or idf[w] > args.min_idf:
                 custom_phrases.add(w)

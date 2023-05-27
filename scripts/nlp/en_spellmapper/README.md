@@ -13,19 +13,13 @@ We use Spoken Wikipedia dataset for testing.
 
 The pipeline consists of multiple steps:
 
-0. [Optional] Train G2P model on cmudict
-      See [google drive]/spellchecking_asr_customization/g2p
-          run.sh(data preparation)
-          train_g2p.sh(training),
-          run_infer.sh(inference)
-
-1. Download and preprocess Yago corpus and instruction on how to download full Wikipedia articles
+1. Download and preprocess Wikipedia titles from Yago corpus. See comments for instruction on how to download full Wikipedia articles.
    `dataset_preparation/preprocess_yago.sh`
 
-2. Feed Yago data to G2P to get phonemes.
+2. Feed titles to G2P to get phonemes.
    `dataset_preparation/run_g2p.sh`
 
-3. Feed phonetic inputs to TTS, generate wav files  (Jocelyn's code)
+3. Feed phonetic inputs to TTS, generate wav files.
    Feed wav files to ASR, get ASR hypotheses (mostly misspelled)
    `dataset_preparation/run_tts_and_asr.sh`
 
@@ -39,12 +33,12 @@ The pipeline consists of multiple steps:
    [Optional] Convert training dataset to tarred files.
    `convert_dataset_to_tarred.sh`
  
-6. Train spellchecking model.
-   `run_training.sh`
+6. Train spellchecking model. This is part of NeMo repository.
+   `[NeMo]/examples/nlp/spellchecking_asr_customization/run_training.sh`
    or 
-   `run_training_tarred.sh`
+   `[NeMo]/examples/nlp/spellchecking_asr_customization/run_training_tarred.sh`
 
-7. Run evaluation.
+7. Run evaluation. By default it uses a pretrained checkpoint to reproduce results in our paper. 
    `evaluation/test_on_spoken_wikipedia.sh`
    or
    `evaluation/test_on_kensho.sh`

@@ -60,11 +60,6 @@ for name in os.listdir(args.folder + "/text"):
                         custom_phrases.add(" ".join(phrase_words))
                     phrase_words = []
                     continue
-                # if idf[w_lower] <= 2 and w_lower == w and len(w) >= 4:   # lower-cased term
-                #    if len(phrase_words) > 0:
-                #        custom_phrases.add(" ".join(phrase_words))
-                #    custom_phrases.add(w)
-                #    phrase_words = []
                 if idf[w_lower] < 500 and w_lower != w and idx != 0:
                     phrase_words.append(w)
                 else:

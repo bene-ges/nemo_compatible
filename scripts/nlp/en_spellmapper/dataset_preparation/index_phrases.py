@@ -31,12 +31,12 @@ parser.add_argument(
     help="Maximum phrases per ngram, ngrams with too many phrases will be deleted",
 )
 parser.add_argument(
-    "--max_dst_freq", type=int, default=10000, help="Ngram mappings with higher dst frequency will be skipped"
+    "--max_misspelled_freq", type=int, default=10000, help="Ngram mappings with higher misspelled frequency will be skipped"
 )
 
 args = parser.parse_args()
 
-vocab, ban_ngram = load_ngram_mappings(args.ngram_mapping, 10000)
+vocab, ban_ngram = load_ngram_mappings(args.ngram_mapping, args.max_misspelled_freq)
 for idx, custom_phrases in enumerate(
     read_custom_phrases(args.input_file, max_lines=args.input_max_lines, portion_size=args.input_portion_size)
 ):

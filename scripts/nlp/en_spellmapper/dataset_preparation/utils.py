@@ -1,6 +1,6 @@
 import re
 
-"""Utility functions for English Spellmapper(Spellchecking ASR Customization) data preparation"""
+"""Utility functions for English SpellMapper(Spellchecking ASR Customization) data preparation"""
 
 from nemo.collections.nlp.data.spellchecking_asr_customization.utils import replace_diacritics
 

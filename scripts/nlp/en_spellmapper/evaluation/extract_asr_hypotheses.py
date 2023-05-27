@@ -1,12 +1,11 @@
-import json
 from argparse import ArgumentParser
 from collections import defaultdict
 
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
 
 parser = ArgumentParser(description="Extract shorter ASR hypotheses for spellchecker customization")
-parser.add_argument("--manifest", required=True, type=str, help='Path to manifest file')
-parser.add_argument("--folder", required=True, type=str, help='Path to output folder')
+parser.add_argument("--manifest", required=True, type=str, help="Path to manifest file")
+parser.add_argument("--folder", required=True, type=str, help="Path to output folder")
 args = parser.parse_args()
 
 

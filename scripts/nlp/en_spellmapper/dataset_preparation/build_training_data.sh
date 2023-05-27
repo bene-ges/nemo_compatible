@@ -103,7 +103,7 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/in
   --ngram_mapping ${NGRAM_MAPPINGS} \
   --min_log_prob -1.0 \
   --max_phrases_per_ngram 400 \
-  --max_dst_freq 10000 \
+  --max_misspelled_freq 10000 \
   --input_portion_size 500000
 
 ## ATTENTION: edit depending on how many portions you get 
@@ -151,7 +151,7 @@ do
       --ngram_mapping ${NGRAM_MAPPINGS} \
       --min_log_prob -4.0 \
       --max_phrases_per_ngram 400 \
-      --max_dst_freq 10000 \
+      --max_misspelled_freq 10000 \
       --input_portion_size 100000 \
       --input_max_lines 100000
 

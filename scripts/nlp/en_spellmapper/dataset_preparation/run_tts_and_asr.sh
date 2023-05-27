@@ -37,10 +37,5 @@ cat pred_ctc.x*.json > pred_ctc.all.json
 
 python ${NEMO_PATH}/examples/asr/speech_to_text_eval.py \
   dataset_manifest=pred_ctc.all.json \
-  use_cer=True \
-  only_score_manifest=True
-
-python ${NEMO_PATH}/examples/asr/speech_to_text_eval.py \
-  dataset_manifest=pred_ctc.all.json \
   use_cer=False \
   only_score_manifest=True

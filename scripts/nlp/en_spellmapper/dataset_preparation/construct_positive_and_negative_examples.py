@@ -266,7 +266,7 @@ def main() -> None:
     misspells_vocab = defaultdict(dict)
     with open(args.sub_misspells_file, "r", encoding="utf-8") as f:
         for line in f:
-            phrase, misspelled_phrase, joint_freq, src_freq, dst_freq = line.strip().split("\t")
+            phrase, misspelled_phrase, joint_freq, _, _ = line.strip().split("\t")
             if phrase == misspelled_phrase:
                 continue
             if misspelled_phrase != misspelled_phrase.strip():  # bug fix, found a phrase with space at the end

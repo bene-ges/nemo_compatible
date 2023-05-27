@@ -15,7 +15,7 @@ Arguments:
             "doc_id": "0018ad922e541b415ae60e175160b976", \
                 "pred_text": "and because of this what you see a pre buying and where you see the scratchage will come"}
   --output_manifest - will be a similar manifest, but "pred_text" will contain the corrected transcript, and old transcript will be stored in "pred_text_before_correction"
-  --min_dst_len - allows to control minimum length of replacement
+  --min_replacement_len - allows to control minimum length of replacement
   --min_prob" - allows to control minimum probability of replacement
 """
 
@@ -27,7 +27,8 @@ from collections import defaultdict
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
 from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
     read_spellmapper_predictions,
-    apply_replacements_to_text
+    apply_replacements_to_text,
+    load_ngram_mappings_for_dp,
 )
 
 parser = argparse.ArgumentParser()
@@ -37,11 +38,20 @@ parser.add_argument(
 )
 parser.add_argument("--input_manifest", required=True, type=str, help="Manifest with transcription before correction")
 parser.add_argument("--output_manifest", required=True, type=str, help="Manifest with transcription after correction")
-parser.add_argument("--min_dst_len", default=1, type=int, help="Minimum dst length")
+parser.add_argument("--min_replacement_len", default=1, type=int, help="Minimum replacement length")
 parser.add_argument("--min_prob", default=0.5, type=int, help="Minimum replacement probability")
+parser.add_argument(
+    "--min_dp_score_per_symbol",
+    required=True,
+    type=float,
+    help="Minimum dynamic programming sum score averaged by hypothesis length",
+)
+parser.add_argument("--ngram_mappings", type=str, required=True, help="File with ngram mappings, needed for dynamic programming")
+
 
 args = parser.parse_args()
 
+joint_vocab, orig_vocab, misspelled_vocab, max_len = load_ngram_mappings_for_dp(args.ngram_mappings)
 
 final_corrections = defaultdict(str)
 banned_count = 0
@@ -68,12 +78,12 @@ for name in os.listdir(args.spellchecker_results_folder):
         for full_sent in short2full_sent[short_sent]:  # it can happen that one short sentence occurred in multiple full sentences
             offset = full_sent.find(short_sent)
             for begin, end, candidate, prob in replacements:
-                if len(candidate) < args.min_dst_len:
+                if len(candidate) < args.min_replacement_len:
                     continue
                 full_sent2corrections[full_sent].append((begin + offset, end + offset, candidate, prob))
 
     for full_sent in full_sent2corrections:
-        corrected_full_sent = apply_replacements_to_text(full_sent, full_sent2corrections[full_sent], min_prob=args.min_prob, replace_hyphen_to_space=True)
+        corrected_full_sent = apply_replacements_to_text(full_sent, full_sent2corrections[full_sent], min_prob=args.min_prob, replace_hyphen_to_space=True, dp_data=(joint_vocab, orig_vocab, misspelled_vocab, max_len), min_dp_score_per_symbol=args.min_dp_score_per_symbol)
         final_corrections[doc_id + "\t" + full_sent] = corrected_full_sent
 
 

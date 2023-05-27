@@ -36,7 +36,7 @@ def read_custom_vocab(filename: str) -> List[str]:
 
 
 print("load ngram mappings...")
-ngram_mapping_vocab, ban_ngram = load_ngram_mappings(args.ngram_mappings, max_dst_freq=125000)
+ngram_mapping_vocab, ban_ngram = load_ngram_mappings(args.ngram_mappings, max_misspelled_freq=125000)
 # CAUTION: entries in ban_ngram end with a space and can contain "+" "="
 print("done.")
 
@@ -177,7 +177,9 @@ for name in os.listdir(args.hypotheses_folder):
                 if c[1] == -1:
                     continue
                 targets.append(str(idx + 1))  # targets are 1-based
-                span_info.append("CUSTOM " + str(c[1]) + " " + str(c[1] + c[2]))  # start/end positions
+                start = c[1]
+                end = min(c[1] + c[2], len(letters))  # ensure that end is not outside sentence length (it can happen because c[2] is candidate length used as approximation)
+                span_info.append("CUSTOM " + str(start) + " " + str(end))
 
             out.write(" ".join(letters) + "\t" + ";".join([x[0] for x in candidates])  + "\t" + " ".join(targets) + "\t" + ";".join(span_info) + "\n")
 
