@@ -9,20 +9,19 @@ NEMO_COMPATIBLE_PATH=nemo_compatible
 ## aadi velli      AA1,D,IY0, ,V,EH1,L,IY0
 
 mkdir tts
-mkdir tts_resample
 
-split -n 26 tts_input.txt
+## l/N     split into N files without splitting lines/records
+split -n l/26 tts_input.txt
+## Run TTS
 for part in "xaa" "xab" "xac" "xad" "xae" "xaf" "xag" "xah" "xai" "xaj" "xak" "xal" "xam" "xan" "xao" "xap" "xaq" "xar" "xas" "xat" "xau" "xav" "xaw" "xax" "xay" "xaz"
 do
     python ${NEMO_COMPATIBLE_PATH}/scripts/tts/tts_en_infer_from_cmu_phonemes.py --input_name $part --output_dir tts --output_manifest $part.json --sample_rate 16000
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/decode_resample.py --manifest $part.json --destination_folder tts_resample
+    ## Run ASR with Conformer-CTC
     python ${NEMO_PATH}/examples/asr/transcribe_speech.py \
       pretrained_name="stt_en_conformer_ctc_large" \
-      dataset_manifest=${part}_decoded.json \
+      dataset_manifest=${part}.json \
       output_filename=./pred_ctc.$part.json \
-      batch_size=256 \
-      cuda=1 \
-      amp=True
+      batch_size=256
 done
 
 cat pred_ctc.x*.json > pred_ctc.all.json

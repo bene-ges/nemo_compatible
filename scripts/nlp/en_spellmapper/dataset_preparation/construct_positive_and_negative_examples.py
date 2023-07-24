@@ -58,12 +58,10 @@ parser.add_argument(
     help="File with misspells used to sample misspells for target phrases",
 )
 
-# muhammad	mohamad;mohammad;muhammed;muhammad's;mohammed;amadeus;l'homme;hamad;mohamed
-# johann	joanna;gianni;joanne;johannes;johanna;joined;johan;jahan;jeanne
-# garwolin railway station	station is a railway station;railway station is a railway
-# dan avidan	is a village and a
+# False positives file format: common_phrase \t custom_phrases (separated by semicolon)
+#    bronze and      bronzen;bronson
 parser.add_argument(
-    "--reverse_frequent_ngrams_candidates", required=True, type=str, help="File with potential false positives"
+    "--false_positives_file", required=True, type=str, help="File with potential false positives"
 )
 
 parser.add_argument(
@@ -79,7 +77,11 @@ args = parser.parse_args()
 
 
 def make_negative_example(
-    text: str, false_positive_vocab: Dict[str, Set[str]], big_sample_of_phrases: List[str], out: TextIO
+    text: str,
+    common2allowed: Dict[str, int],
+    common2custom: Dict[str, Dict[str, int]],
+    big_sample_of_phrases: List[str],
+    out: TextIO
 ) -> None:
     incorrect_phrases = set()
     words = text.split()
@@ -91,17 +93,22 @@ def make_negative_example(
             ngrams.add(ngram)
 
     for ngram in ngrams:
-        if ngram in false_positive_vocab:
+        if ngram in common2allowed and common2allowed[ngram] > 0:
             phrases = []
-            for phrase in false_positive_vocab[ngram]:
+            for phrase in common2custom[ngram]:
                 # skip candidates that are present as ngrams in this fragment (they should not appear as incorrect candidates)
                 if phrase in ngrams:
+                    continue
+                if common2custom[ngram][phrase] < 1:
                     continue
                 phrases.append(phrase)
             if len(phrases) == 0:
                 continue
-            for phr in random.choices(phrases, k=3):
-                incorrect_phrases.add("*" + phr)
+            for phr in random.choices(phrases, k=random.randint(1, 3)):
+                if "*" + phr not in incorrect_phrases:
+                    common2custom[ngram][phr] -= 1
+                    common2allowed[ngram] -= 1
+                    incorrect_phrases.add("*" + phr)
 
     while len(incorrect_phrases) < 10:
         cand = random.choice(big_sample_of_phrases)  # take just random phrase as candidate
@@ -117,13 +124,19 @@ def make_negative_example(
 
 
 def process_negative_examples(
-    filename: str, out_negative: TextIO, false_positive_vocab: Dict[str, Set[str]], big_sample_of_phrases: List[str]
+    filename: str,
+    out_negative: TextIO,
+    common2allowed: Dict[str, int],
+    common2custom: Dict[str, Dict[str, int]],
+    big_sample_of_phrases: List[str]
 ) -> None:
     with open(filename, "r", encoding="utf-8") as f:
         for line in f:
             # singapore began airing on channel twelve on the	0
             text, _ = line.strip().split("\t")
-            make_negative_example(text, false_positive_vocab, big_sample_of_phrases, out_negative)
+            make_negative_example(
+                text, common2allowed, common2custom, big_sample_of_phrases, out_negative
+            )
 
 
 def process_positive_examples(
@@ -132,7 +145,11 @@ def process_positive_examples(
     out_negative: TextIO,
     misspells_vocab: Dict[str, Dict[str, float]],
     related_vocab: Dict[str, Dict[str, int]],
-    false_positive_vocab: Dict[str, Set[str]],
+    custom2common: Dict[str, Set[str]],
+    common2allowed_for_nonempty: Dict[str, int],
+    common2custom_for_nonempty: Dict[str, Dict[str, int]],
+    common2allowed_for_empty: Dict[str, int],
+    common2custom_for_empty: Dict[str, Dict[str, int]],
     big_sample_of_phrases: List[str],
 ) -> None:
     with open(filename, "r", encoding="utf-8") as f:
@@ -165,8 +182,17 @@ def process_positive_examples(
                 mask[begin:end] = [1] * (end - begin)
                 selected[phrase].append((begin, end))
             if len(selected) == 0:  # if no correct candidates were selected make this a negative example
-                make_negative_example(text, false_positive_vocab, big_sample_of_phrases, out_negative)
+                make_negative_example(text, common2allowed_for_empty, common2custom_for_empty, big_sample_of_phrases, out_negative)
                 continue
+
+            # increase allowed counts for common phrases paired with selected correct candidates
+            for phrase in selected:
+                if phrase in custom2common:
+                    for common in custom2common[phrase]:
+                        common2allowed_for_nonempty[common] += 1
+                        common2custom_for_nonempty[common][phrase] += 1
+                        common2allowed_for_empty[common] += 1
+                        common2custom_for_empty[common][phrase] += 1
 
             words = text.split()
             ngrams = set()
@@ -197,16 +223,21 @@ def process_positive_examples(
             incorrect_phrases2 = set()  # here we store incorrect candidates from source 2: false positives
 
             for ngram in ngrams:
-                if ngram in false_positive_vocab:
+                if ngram in common2allowed_for_nonempty and common2allowed_for_nonempty[ngram] > 0:
                     phrases = []
-                    for phrase in false_positive_vocab[ngram]:
+                    for phrase in common2custom_for_nonempty[ngram]:
+                        # skip candidates that are present as ngrams in this fragment (they should not appear as incorrect candidates)
                         if phrase in ngrams:
+                            continue
+                        if common2custom_for_nonempty[ngram][phrase] < 1:
                             continue
                         phrases.append(phrase)
                     if len(phrases) == 0:
                         continue
-                    for phr in random.choices(phrases, k=min(3, len(phrases))):
-                        incorrect_phrases2.add("*" + phr)
+                    for phr in random.choices(phrases, k=random.randint(1, 3)):
+                        if "*" + phr not in incorrect_phrases2 and "#" + phr not in incorrect_phrases1:
+                            incorrect_phrases2.add("*" + phr)
+
 
             selected_incorrect_candidates = set()
             if len(incorrect_phrases1) > 0:
@@ -227,6 +258,13 @@ def process_positive_examples(
             candidates = list(selected.keys()) + selected_incorrect_candidates[:needed_incorrect_count]
             random.shuffle(candidates)
 
+            # decrease future allowed counts for selected false positives
+            for cand in candidates:
+                if cand.startswith("*"):
+                    custom = cand[1:]
+                    for common in custom2common[custom]:
+                        common2custom_for_nonempty[common][custom] -= 1
+                        common2allowed_for_nonempty[common] -= 1
             targets = []
             spans = []
             misspelled_targets = []
@@ -244,7 +282,7 @@ def process_positive_examples(
                             sum += misspells_vocab[cand][misspell]
                             misspells.append(misspell)
                             weights.append(misspells_vocab[cand][misspell])
-                        weights[0] = 0.1 * sum  #  no misspell variant will be chosen in 10%
+                        weights[0] = 0.1 * sum  # no misspell variant will be chosen in 10%
                         misspell = random.choices(misspells, weights=weights, k=1)
                         misspelled_targets.append(misspell[0])  # this list has a single element
 
@@ -279,20 +317,33 @@ def main() -> None:
             phrase, related_phrase, covered_symbols = line.strip().split("\t")
             if phrase == related_phrase:
                 continue
+            # skip pairs like "rockbrook"/"rock_brook"
+            if phrase.replace("_", "") == related_phrase.replace("_", ""):
+                continue
             phrase = phrase.replace("_", " ")
             related_phrase = related_phrase.replace("_", " ")
             related_vocab[phrase][related_phrase] = int(covered_symbols)
 
-    false_positive_vocab = defaultdict(set)
-    with open(args.reverse_frequent_ngrams_candidates, "r", encoding="utf-8") as f:
+    # The idea is that we want to balance the number of false positive custom phrases
+    # added as candidates for common phrases occurrences
+    # with the number of occurrences of these custom phrases as real positive candidates.
+    # Otherwise, the model can learn to ignore these particular custom phrases.
+    # We store counts separately for nonempty(positive) and empty(negative) examples.
+    custom2common = defaultdict(set)  # key=custom_phrase; value=set of common_phrases
+    common2allowed_for_nonempty = defaultdict(int)  # key=common_phrase; value=number of allowed occurrences (sum for all custom phrases)
+    common2custom_for_nonempty = defaultdict(dict)  # key=common_phrase; value=dict (key=custom_phrase, value=number of allowed occurrences)
+    common2allowed_for_empty = defaultdict(int)  # key=common_phrase; value=number of allowed occurrences (sum for all custom phrases)
+    common2custom_for_empty = defaultdict(dict)  # key=common_phrase; value=dict (key=custom_phrase, value=number of allowed occurrences)
+    with open(args.false_positives_file, "r", encoding="utf-8") as f:
         for line in f:
-            phrase, inputs = line.strip().split("\t")
-            for inp in inputs.split(";"):
-                if inp == phrase:
-                    continue
-                if inp not in false_positive_vocab:
-                    false_positive_vocab[inp] = set()
-                false_positive_vocab[inp].add(phrase)
+            common_phrase, custom_phrases_str = line.strip().split("\t")
+            custom_phrases = custom_phrases_str.split(";")
+            common2allowed_for_nonempty[common_phrase] = 0
+            common2allowed_for_empty[common_phrase] = 0
+            for k in custom_phrases:
+                custom2common[k].add(common_phrase)
+                common2custom_for_nonempty[common_phrase][k] = 0
+                common2custom_for_empty[common_phrase][k] = 0
 
     big_sample_of_phrases = list(misspells_vocab.keys())
 
@@ -306,10 +357,20 @@ def main() -> None:
         out_negative,
         misspells_vocab,
         related_vocab,
-        false_positive_vocab,
+        custom2common,
+        common2allowed_for_nonempty,
+        common2custom_for_nonempty,
+        common2allowed_for_empty,
+        common2custom_for_empty,
         big_sample_of_phrases,
     )
-    process_negative_examples(args.empty_fragments_file, out_negative, false_positive_vocab, big_sample_of_phrases)
+    process_negative_examples(
+        args.empty_fragments_file,
+        out_negative,
+        common2allowed_for_empty,
+        common2custom_for_empty,
+        big_sample_of_phrases,
+    )
     out_positive.close()
     out_negative.close()
 

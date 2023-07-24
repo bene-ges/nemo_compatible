@@ -118,7 +118,7 @@ ${NEMO_PATH}/tools/ctc_segmentation/run_filter.sh \
 --SCRIPTS_DIR=${NEMO_PATH}/tools/ctc_segmentation/scripts \
 --MODEL_NAME_OR_PATH=${MODEL_FOR_RECOGNITION} \
 --BATCH_SIZE=${BATCH_SIZE} \
---MANIFEST=$OUTPUT_DIR/manifests/manifest.json \
+--MANIFEST=${OUTPUT_DIR}/manifests/manifest.json \
 --INPUT_AUDIO_DIR=${INPUT_DIR}_prepared/audio/ \
 --EDGE_LEN=${EDGE_LEN} \
 --CER_THRESHOLD=${CER_THRESHOLD} \
@@ -130,14 +130,14 @@ ${NEMO_PATH}/tools/ctc_segmentation/run_filter.sh \
 
 ## Merge multiple spaces (only occur in Conformer CTC).
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/combine_multiple_space_in_manifest.py \
-  --input_manifest ${WORKDIR}/manifests/manifest_transcribed_metrics_filtered.json \
-  --output_manifest ${WORKDIR}/manifests/manifest_ctc.json
+  --input_manifest ${OUTPUT_DIR}/manifests/manifest_transcribed_metrics_filtered.json \
+  --output_manifest ${OUTPUT_DIR}/manifests/manifest_ctc.json
 
 ## Transcribe data by NeMo model Conformer-Transducer Large (this is the second baseline model)
 python ${NEMO_PATH}/examples/asr/transcribe_speech.py \
   pretrained_name="stt_en_conformer_transducer_large" \
-  dataset_manifest=${WORKDIR}/manifests/manifest_ctc.json \
-  output_filename=${WORKDIR}/manifests/manifest_transducer.json \
+  dataset_manifest=${OUTPUT_DIR}/manifests/manifest_ctc.json \
+  output_filename=${OUTPUT_DIR}/manifests/manifest_transducer.json \
   batch_size=16
 
 ## Check WER of ASR results on the resulting dataset.
@@ -195,8 +195,8 @@ python ${NEMO_PATH}/examples/asr/speech_to_text_eval.py \
 ## Create custom vocabularies in ${INPUT_DIR}/vocabs/{1..1340}.custom.txt
 ## It will use *.headings.txt and rare words/phrases from article text.
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/create_custom_vocabs_for_spoken_wikipedia.py \
-  --folder ${INPUT_DIR} 
-  --processed_folder ${OUTPUT_DIR}/processed
+  --folder ${INPUT_DIR}_prepared \
+  --processed_folder ${OUTPUT_DIR}/processed \
   --min_len 6
 
 for ASRTYPE in "ctc" "transducer"
@@ -212,16 +212,17 @@ do
     mkdir ${OUTPUT_DIR}/spellchecker_output_${ASRTYPE}
     python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/prepare_input_for_spellchecker_inference.py \
       --hypotheses_folder ${OUTPUT_DIR}/hypotheses_${ASRTYPE} \
-      --vocabs_folder ${INPUT_DIR}/vocabs \
+      --vocabs_folder ${INPUT_DIR}_prepared/vocabs \
       --output_folder ${OUTPUT_DIR}/spellchecker_input_${ASRTYPE} \
       --ngram_mappings ${NGRAM_MAPPINGS} \
+      --max_misspelled_freq 125000 \
       --big_sample_file ${BIG_SAMPLE}
 
     ## Create filelist with input filenames
     rm ${WORKDIR}/filelist.txt
     for i in {1..1341}
     do
-        echo ${OUTPUT_DIR}/spellchecker_input/${i}.txt >> ${WORKDIR}/filelist.txt
+        echo ${OUTPUT_DIR}/spellchecker_input_${ASRTYPE}/${i}.txt >> ${WORKDIR}/filelist.txt
     done
 
     ## Run inference with neural customization spellchecking model
@@ -251,7 +252,7 @@ do
     ## Perform error analysis and create "ideal" spellchecker results for comparison
     python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/analyze_custom_ref_vs_asr.py \
       --manifest ${OUTPUT_DIR}/manifests/manifest_${ASRTYPE}_corrected.json \
-      --vocab_dir ${INPUT_DIR}/vocabs \
+      --vocab_dir ${INPUT_DIR}_prepared/vocabs \
       --input_dir ${OUTPUT_DIR}/spellchecker_input_${ASRTYPE} \
       --ngram_mappings ${NGRAM_MAPPINGS} \
       --output_name ${WORKDIR}/${ASRTYPE}_analysis_ref_vs_asr.txt

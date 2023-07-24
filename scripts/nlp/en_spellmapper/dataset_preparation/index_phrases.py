@@ -1,6 +1,6 @@
+import math
 from argparse import ArgumentParser
-
-from utils import read_custom_phrases
+from typing import Set
 
 from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
     get_index,
@@ -10,16 +10,10 @@ from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
 parser = ArgumentParser(description="Create index for custom phrases, allows to use parameters")
 parser.add_argument("--input_file", required=True, type=str, help="Path to input file with custom phrases")
 parser.add_argument(
-    "--input_max_lines",
+    "--portion_size",
     type=int,
-    default=-1,
-    help="If set to a number > 0, only that many lines will be read from input file",
-)
-parser.add_argument(
-    "--input_portion_size",
-    type=int,
-    default=-1,
-    help="If set to a number > 0, leads to input file split to portions of that number of lines",
+    default=150000,
+    help="Random split of phrase set to portions of approximately that number of elements",
 )
 parser.add_argument("--ngram_mapping", type=str, required=True, help="Path to ngram mapping vocabulary")
 parser.add_argument("--output_file", type=str, required=True, help="Output file")
@@ -36,21 +30,30 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+
 vocab, ban_ngram = load_ngram_mappings(args.ngram_mapping, args.max_misspelled_freq)
-for idx, custom_phrases in enumerate(
-    read_custom_phrases(args.input_file, max_lines=args.input_max_lines, portion_size=args.input_portion_size)
-):
-    print(idx, "len(custom_phrases)", len(custom_phrases))
+all_phrases = set()
+with open(args.input_file, "r", encoding="utf-8") as f:
+    for line in f:
+        parts = line.strip().split("\t")
+        all_phrases.add(" ".join(list(parts[0].casefold().replace(" ", "_"))))
+
+n_portions = math.ceil(len(all_phrases) / args.portion_size)
+portion_size = math.ceil(len(all_phrases) / n_portions)
+
+all_phrases = list(all_phrases)
+for i in range(n_portions):
+    portion = all_phrases[i * portion_size:(i * portion_size) + portion_size]
+
     phrases, ngram2phrases = get_index(
-        custom_phrases,
+        portion,
         vocab,
         ban_ngram,
         min_log_prob=args.min_log_prob,
         max_phrases_per_ngram=args.max_phrases_per_ngram,
     )
-    print("len(phrases)=", len(phrases), "; len(ngram2phrases)=", len(ngram2phrases))
 
-    with open(args.output_file + "." + str(idx), "w", encoding="utf-8") as out:
+    with open(args.output_file + "." + str(i), "w", encoding="utf-8") as out:
         for ngram in ngram2phrases:
             for phrase_id, b, size, lp in ngram2phrases[ngram]:
                 phr = phrases[phrase_id]

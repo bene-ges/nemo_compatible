@@ -55,7 +55,7 @@ def extract_sentences(
             if text is None or title is None:
                 continue
             title_clean_spaced = " " + title_clean + " "
-            for p, p_clean in get_paragraphs_from_text(text):
+            for p, p_clean in get_paragraphs_from_text(text, skip_if_len_mismatch=True):
                 words = p_clean.split()
                 phrases = set()
                 sub_phrases = set()

@@ -36,7 +36,7 @@ def collect_ngrams(ngrams: List[Dict[str, int]], length: int, min_freq: int) -> 
         paragraph = line.strip()
         p = preprocess_apostrophes_space_diacritics(paragraph)
         p_clean = CHARS_TO_IGNORE_REGEX.sub(" ", p).lower()  # number of characters is the same in p and p_clean
-        p_clean = " " + " ".join(p_clean.split(" ")) + " "
+        p_clean = " " + " ".join(p_clean.split()) + " "
 
         space_matches = list(re.finditer(r"\s+", p_clean))  # these are already sorted by beginning
 

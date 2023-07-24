@@ -1,5 +1,30 @@
 """
 This script is used to calculate idf for words and short phrases from Yago Wikipedia articles.
+
+Sub misspells file format: original subphrase, misspelled subphrase, joint frequency, frequency of original subphrase, frequency of misspelled subphrase
+    domchor dahmer  2       6       6
+    domchor dummer  2       6       23
+    battery battery 394     395     443
+    aaaa battery    a battery       2       2       9
+    aaaarrghh       are     2       2       1354
+    auto    otto    38      314     2332
+    auto    auto    239     314     824
+    auto    outo    3       314     37
+    auto    atto    16      314     253
+    auto    out of  2       314     178
+    auto    autto   4       314     18
+    aaa auto        a otto  2       2       2
+    aaa battery     a battery       2       2       9
+
+Output file format: phrase, idf, number of documents in which phrase occured
+    in the  0.32193097471545545     2305627
+    was     0.32511695805297663     2298293
+    of the  0.3559607516604808      2228487
+    ...
+    emmanuel episcopal church       13.586499828372018      4
+    cornewall       13.586499828372018      4
+    george bryan    13.586499828372018      4
+
 """
 
 import argparse
@@ -21,23 +46,23 @@ parser.add_argument(
     type=str,
     help="Input folder with tar.gz files each containing wikipedia articles in json format",
 )
-parser.add_argument("--exclude_titles_file", required=True, type=str, help="File with article titles to be skipped")
+parser.add_argument(
+    "--sub_misspells_file", required=True, type=str, help="File with subphrase misspells from YAGO entities"
+)
 parser.add_argument("--output_file", required=True, type=str, help="Output file")
-parser.add_argument("--yago_entities_file", required=True, type=str, help="File with preprocessed YAGO entities")
 args = parser.parse_args()
 
 
-def get_idf(input_folder: str, exclude_titles: Set[str], yago_entities: Set[str]):
+def get_idf(input_folder: str, key_phrases: Set[str]):
     """
     Args:
         input_folder: Input folder with tar.gz files each containing wikipedia articles in json format
-        exclude_titles: Set of titles that should be skipped (e.g. test articles)
-        yago_entities: Set of phrases that we want to find in texts
+        key_phrases: Set of phrases that we want to find in texts
 
     Returns:
         idf: a dictionary where the key is a phrase, value is its inverse document frequency
     """
-
+    exclude_titles = set()
     n_documents = 0
     idf = defaultdict(int)
     for name in os.listdir(input_folder):
@@ -51,12 +76,12 @@ def get_idf(input_folder: str, exclude_titles: Set[str], yago_entities: Set[str]
             text = byte.decode("utf-8")
             n_documents += 1
             phrases = set()
-            for p, p_clean in get_paragraphs_from_json(text, exclude_titles):
+            for p, p_clean in get_paragraphs_from_json(text, exclude_titles, skip_if_len_mismatch=False):
                 words = p_clean.split()
                 for begin in range(len(words)):
                     for end in range(begin + 1, min(begin + 5, len(words) + 1)):
                         phrase = " ".join(words[begin:end])
-                        if phrase in yago_entities:
+                        if phrase in key_phrases:
                             phrases.add(phrase)
             for phrase in phrases:
                 idf[phrase] += 1  # one count per document
@@ -69,23 +94,16 @@ def get_idf(input_folder: str, exclude_titles: Set[str], yago_entities: Set[str]
 
 
 if __name__ == "__main__":
-    n = 0
-    exclude_titles = set()
-    with open(args.exclude_titles_file, "r", encoding="utf-8") as f:
+    key_phrases = set()
+    with open(args.sub_misspells_file, "r", encoding="utf-8") as f:
         for line in f:
-            exclude_titles.add(line.strip())
+            parts = line.strip().split("\t")
+            orig_phrase, misspelled_phrase, _, _, _  = parts
+            # against rare multiple space occurrence
+            key_phrases.add(" ".join(orig_phrase.split()))
+            key_phrases.add(" ".join(misspelled_phrase.split()))
 
-    yago_entities = load_yago_entities(args.yago_entities_file, exclude_titles)
-    # add ngrams from yago_entities as separate phrases (may need them later, need to know their idf too)
-    yago_entities_plus = set()
-    for phrase in yago_entities:
-        words = phrase.split()
-        for begin in range(len(words)):
-            for end in range(begin + 1, min(begin + 5, len(words) + 1)):
-                new_phrase = " ".join(words[begin:end])
-                yago_entities_plus.add(new_phrase)
-
-    idf, n_documents = get_idf(args.input_folder, exclude_titles, yago_entities.union(yago_entities_plus))
+    idf, n_documents = get_idf(args.input_folder, key_phrases)
 
     with open(args.output_file, "w", encoding="utf-8") as out:
         for phrase, freq in sorted(idf.items(), key=lambda item: item[1], reverse=True):

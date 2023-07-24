@@ -1,8 +1,17 @@
-import re
-
 """Utility functions for English SpellMapper(Spellchecking ASR Customization) data preparation"""
 
-from nemo.collections.nlp.data.spellchecking_asr_customization.utils import replace_diacritics
+import json
+import numpy as np
+import re
+
+from heapq import heappush, heapreplace
+from typing import Dict, List, Set, Tuple
+
+
+from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
+    replace_diacritics,
+    search_in_index
+)
 
 # ATTENTION: do not delete hyphen and apostrophe
 CHARS_TO_IGNORE_REGEX = re.compile(r"[\.\,\?\:!;()«»…\]\[/\*–‽+&_\\½√>€™$•¼}{~—=“\"”″‟„]")
@@ -15,6 +24,7 @@ def preprocess_apostrophes_space_diacritics(text):
     text = APOSTROPHES_REGEX.sub("'", text)  # replace different apostrophes by one
     text = re.sub(r"'+", "'", text)  # merge multiple apostrophes
     text = SPACE_REGEX.sub(" ", text)  # replace different spaces by one
+    text = text.replace("\t", " ")  # replace tab with space
     text = replace_diacritics(text)
 
     text = re.sub(r" '", " ", text)  # delete apostrophes at the beginning of word
@@ -64,18 +74,22 @@ def get_title_and_text_from_json(content: str, exclude_titles: Set[str]) -> Tupl
     return (None, None, None)
 
 
-def get_paragraphs_from_text(text):
+def get_paragraphs_from_text(text: str, skip_if_len_mismatch: bool = False) -> Tuple[str, str]:
     paragraphs = text.split("\n")
     for paragraph in paragraphs:
         if paragraph == "":
             continue
         p = preprocess_apostrophes_space_diacritics(paragraph)
-        # number of characters is the same in p and p_clean
         p_clean = CHARS_TO_IGNORE_REGEX.sub(" ", p).lower()
+        # number of characters should be the same in p and p_clean
+        # except for some cases when .lower() changes the number of characters,
+        # e.g. Turkish (p[228:233]) İller  => (k[228:233]) i̇lle
+        if skip_if_len_mismatch and len(p) != len(p_clean):
+            continue
         yield p, p_clean
 
 
-def get_paragraphs_from_json(text, exclude_titles):
+def get_paragraphs_from_json(text: str, exclude_titles: Set[str], skip_if_len_mismatch: bool = False) -> Tuple[str, str]:
     # Example of file content
     #   {"query":
     #     {"normalized":[{"from":"O'_Coffee_Club","to":"O' Coffee Club"}],
@@ -114,8 +128,12 @@ def get_paragraphs_from_json(text, exclude_titles):
             if paragraph == "":
                 continue
             p = preprocess_apostrophes_space_diacritics(paragraph)
-            # number of characters is the same in p and p_clean
             p_clean = CHARS_TO_IGNORE_REGEX.sub(" ", p).lower()
+            # number of characters should be the same in p and p_clean
+            # except for some cases when .lower() changes the number of characters,
+            # e.g. Turkish (p[228:233]) İller  => (k[228:233]) i̇lle
+            if skip_if_len_mismatch and len(p) != len(p_clean):
+                continue
             yield p, p_clean
 
 
@@ -134,29 +152,6 @@ def load_yago_entities(input_name: str, exclude_titles: Set[str]) -> Set[str]:
                 continue
             yago_entities.add(title_clean)
     return yago_entities
-
-
-def read_custom_phrases(filename: str, max_lines: int = -1, portion_size: int = -1) -> List[str]:
-    """Reads custom phrases from input file.
-    If input file contains multiple columns, only first column is used.
-    """
-    phrases = set()
-    with open(filename, "r", encoding="utf-8") as f:
-        n = 0
-        n_for_portion = 0
-        for line in f:
-            parts = line.strip().split("\t")
-            phrases.add(" ".join(list(parts[0].casefold().replace(" ", "_"))))
-            if portion_size > 0 and n_for_portion >= portion_size:
-                yield list(phrases)
-                phrases = set()
-                n_for_portion = 0
-            if max_lines > 0 and n >= max_lines:
-                yield list(phrases)
-                return
-            n += 1
-            n_for_portion += 1
-    yield list(phrases)
 
 
 def get_candidates_with_most_coverage(

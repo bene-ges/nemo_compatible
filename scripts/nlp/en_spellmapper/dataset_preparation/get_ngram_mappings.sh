@@ -23,7 +23,7 @@ cd ${ALIGNMENT_DIR}
 cd ..
 
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
-  --mode=extract_giza_alignments \
+  --mode=extract_alignments \
   --input_name=${ALIGNMENT_DIR} \
   --output_name=${ALIGNMENT_DIR}/align.out
 
@@ -44,17 +44,16 @@ awk 'BEGIN {FS="\t"}($3 / $4 > 0.005){print $0}' < replacement_vocab_full.txt > 
 ## a u t o    o <DELETE> t o  67      3790    1406
 
 
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
-  --mode=get_sub_misspells \
-  --input_name=${ALIGNMENT_DIR}/align.out \
-  --output_name=sub_misspells.txt
-
 ## This gives a vocabulary of aligned subphrases (consisting of adjacent words from original phrases)
 ## Format: original subphrase, misspelled subphrase, joint frequency, frequency of original subphrase, frequency of misspelled subphrase
 ## domchor dahmer  2       6       6
 ## domchor dummer  2       6       23
 ## domchor dammer  1       6       20
 ## domchor domer   1       6       9
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
+  --mode=get_sub_misspells \
+  --input_name=${ALIGNMENT_DIR}/align.out \
+  --output_name=sub_misspells.txt
 
 ## This file will be used later during synthetic data generation to use not only Wikipedia titles as whole phrases, but also their parts.
 

@@ -49,13 +49,17 @@ parser.add_argument(
 parser.add_argument(
     "--output_file_empty", required=True, type=str, help="Output file for fragments with no correct candidates"
 )
+parser.add_argument(
+    "--step_in_words", default=1, type=int, help="Step in words when cutting fragments"
+)
 args = parser.parse_args()
 
 
 def cut_spans(phrases: List[str], paragraph: str, out_non_empty: TextIO, out_empty: TextIO) -> None:
     p = preprocess_apostrophes_space_diacritics(paragraph)
     p_clean = CHARS_TO_IGNORE_REGEX.sub(" ", p).lower()  # number of characters is the same in p and p_clean
-    p_clean = " ".join(p_clean.split(" "))
+    p_clean = p_clean.replace("-", " ") # replace hyphen with space
+    p_clean = " ".join(p_clean.split())
 
     p_clean_spaced = " " + p_clean + " "
     matches = []
@@ -67,7 +71,7 @@ def cut_spans(phrases: List[str], paragraph: str, out_non_empty: TextIO, out_emp
     space_matches = list(re.finditer(r"\s+", p_clean_spaced))  # these are already sorted by beginning
 
     next_phrase_match_id = 0 if len(sorted_matches) > 0 else -1
-    for i in range(len(space_matches) - 1):
+    for i in range(0, len(space_matches) - 1, args.step_in_words):
         begin = space_matches[i].start()
         j = random.randrange(min(i + 3, len(space_matches) - 1), min(i + 12, len(space_matches)))
         end = space_matches[j].start()
@@ -102,6 +106,10 @@ def cut_spans(phrases: List[str], paragraph: str, out_non_empty: TextIO, out_emp
                 span_info.append("[" + k.strip() + "] " + str(kstart) + " " + str(kend))
             out_non_empty.write(text + "\t" + target_str + "\t" + ";".join(span_info) + "\n")
         else:  # negative case
+            # skip half of short negative examples or there are too many of them
+            if j - i < 5:
+                if random.random() > 0.5:
+                    continue
             out_empty.write(text + "\t0\t\n")
 
 

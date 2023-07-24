@@ -54,6 +54,8 @@ def update_vocabs_with_aligned_fragment(
     if clean:
         rep = rep.replace("<DELETE>", "").replace("+", "").replace(" ", "").replace("_", " ")
         inp = inp.replace(" ", "").replace("_", " ")
+    if inp.strip() == "" or rep.strip() == "":
+        return
     if not rep in full_vocab[inp]:
         full_vocab[inp][rep] = 0
     full_vocab[inp][rep] += 1
@@ -144,6 +146,7 @@ def get_sub_misspells() -> None:
     with open(args.output_name, "w", encoding="utf-8") as out:
         for inp in full_vocab:
             for rep in full_vocab[inp]:
+                # filter out too rare translations
                 if full_vocab[inp][rep] / src_vocab[inp] <= 1 / 200:
                     continue
                 if rep == "":

@@ -15,6 +15,7 @@ parser.add_argument("--hypotheses_folder", required=True, type=str, help="Path t
 parser.add_argument("--vocabs_folder", type=str, required=True, help="Path to input folder with user vocabs")
 parser.add_argument("--output_folder", type=str, required=True, help="Output folder")
 parser.add_argument("--ngram_mappings", type=str, required=True, help="Path to ngram mappings vocabulary")
+parser.add_argument("--max_misspelled_freq", type=int, required=True, help="Ngrams with freq higher that that won't be used in indexing")
 parser.add_argument(
     "--big_sample_file",
     required=True,
@@ -36,7 +37,7 @@ def read_custom_vocab(filename: str) -> List[str]:
 
 
 print("load ngram mappings...")
-ngram_mapping_vocab, ban_ngram = load_ngram_mappings(args.ngram_mappings, max_misspelled_freq=125000)
+ngram_mapping_vocab, ban_ngram = load_ngram_mappings(args.ngram_mappings, args.max_misspelled_freq)
 # CAUTION: entries in ban_ngram end with a space and can contain "+" "="
 print("done.")
 

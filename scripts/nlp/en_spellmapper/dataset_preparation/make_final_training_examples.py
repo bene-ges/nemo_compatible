@@ -27,6 +27,7 @@ Example:
 
 """
 
+import os
 import random
 import re
 from argparse import ArgumentParser
@@ -47,16 +48,30 @@ parser.add_argument(
     help="Desired fraction of negative examples, from 0 to 1, default 0.5",
 )
 
+parser.add_argument(
+    "--lines_in_portion",
+    type=int,
+    default=110000,
+    help="Number of lines in portion, default 110000",
+)
 
-parser.add_argument("--output_file", required=True, type=str, help="Output file")
+parser.add_argument("--output_folder", required=True, type=str, help="Output folder")
+
 args = parser.parse_args()
 
-
 def main() -> None:
+    out_index = 1
+    n = 0
     input_positive = open(args.positive_file, "r", encoding="utf-8")
     input_negative = open(args.negative_file, "r", encoding="utf-8")
-    output = open(args.output_file, "w", encoding="utf-8")
+    output = open(os.path.join(args.output_folder, str(out_index) + ".tsv"), "w", encoding="utf-8")
     while True:
+        if n >= args.lines_in_portion:
+            output.close()
+            out_index += 1
+            output = open(os.path.join(args.output_folder, str(out_index) + ".tsv"), "w", encoding="utf-8")
+            n = 0
+
         if random.uniform(0, 1) > args.fraction_of_negatives:
             f = input_positive
         else:
@@ -79,6 +94,7 @@ def main() -> None:
                 candidate = " ".join(list(cand[1:].replace(" ", "_")))
                 candidates.append(candidate)
             output.write(text + "\t" + ";".join(candidates) + "\t0\t\n")
+            n += 1
         elif len(parts) == 5:  # positive example
             text, candidate_str, target_str, span_str, misspell_str = parts
             if text != re.sub("[^ '\-aiuenrbomkygwthszdcjfvplxq]", " ", text):
@@ -124,7 +140,7 @@ def main() -> None:
                 span_info.append("CUSTOM " + str(span[0]) + " " + str(span[1]))
 
             output.write(text + "\t" + ";".join(candidates) + "\t" + target_str + "\t" + ";".join(span_info) + "\n")
-
+            n += 1
         else:
             print("Bad format: ", line)
 
