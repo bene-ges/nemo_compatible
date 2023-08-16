@@ -71,6 +71,7 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
             if end >= len(text):
                 break
             text = text[end:]
+            end = 0
             m = re.search(r"[\w\-]+", text)
         if end < len(text):
             phonemized_text += text[end:]
