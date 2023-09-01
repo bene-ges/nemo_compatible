@@ -16,12 +16,16 @@ The pipeline consists of multiple steps:
 В английском достаточно было пропустить через TTS+G2P+ASR только названия статей, потому что в английском мало словоизменения.
 В русском так не годится, потому что все примеры будут в начальной форме.
 Нужно собрать примеры выражений в разных формах из текста статей.
+
 Названия статей
     https://huggingface.co/datasets/bene-ges/wikipedia_ru_titles
+
 Примеры запакованных файлов со скачанными статьями (пока не все, только на букву -я)
     https://huggingface.co/datasets/bene-ges/wikipedia_ru
+
 Пример скрипта, как итерироваться по скачанным статьям (английским)
     https://github.com/bene-ges/nemo_compatible/blob/main/scripts/nlp/en_spellmapper/dataset_preparation/prepare_sentences_from_yago_wiki.py
+
 Нужно написать такой же скрипт, но чтобы прикладывал находил употребления в разных формах.
 
 Для прикладывания окончаний можно использовать список пар окончаний из файла endings_10.txt
