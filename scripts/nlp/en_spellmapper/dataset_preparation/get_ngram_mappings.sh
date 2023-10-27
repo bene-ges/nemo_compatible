@@ -29,7 +29,7 @@ cd ${ALIGNMENT_DIR}
 cd ..
 
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
-  --mode=extract_giza_alignments \
+  --mode=extract_alignments \
   --input_name=${ALIGNMENT_DIR} \
   --output_name=${ALIGNMENT_DIR}/align.out
 
