@@ -1,4 +1,4 @@
-NEMO_PATH=NeMo
+NEMO_COMPATIBLE_PATH=nemo_compatible
 
 ## download yagoTypes.tsv from https://www.mpi-inf.mpg.de/departments/databases-and-information-systems/research/yago-naga/yago/downloads/
 
