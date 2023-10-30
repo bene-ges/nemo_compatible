@@ -31,8 +31,11 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/ex
 ## wget "https://en.wikipedia.org/w/api.php?format=xml&action=query&prop=extracts&titles=Anna_Dumitriu&redirects=true&format=json&explaintext=1&exsectionformat=plain" -O anna_dumitriu.txt
 
 ## Use the below command or split into several parts:
-## awk 'BEGIN {FS="\t"; print "#!/usr/bin/env bash"} {print "wget \"https://en.wikipedia.org/w/api.php?format=xml&action=query&prop=extracts&titles=" $1 "&redirects=true&format=json&explaintext=1&exsectionformat=plain\" -O \"articles/" $2 ".txt\"\nsleep 0.1"}' < yago.uniq2 > run_wget.sh
-## ./run_wget.sh
+WIKIPEDIA_FOLDER=./yago_wikipedia
+mkdir $WIKIPEDIA_FOLDER 
+
+awk 'BEGIN {FS="\t"; print "#!/usr/bin/env bash"} {print "wget \"https://en.wikipedia.org/w/api.php?format=xml&action=query&prop=extracts&titles=" $1 "&redirects=true&format=json&explaintext=1&exsectionformat=plain\" -O \"'"$WIKIPEDIA_FOLDER"'" $2 ".txt\"\nsleep 0.1"}' < yago.uniq2 > run_wget.sh
+bash ./run_wget.sh
 
 ## To use downloaded artiles in later scripts, you need to create a folder with following structure:
 ## yagowiki
