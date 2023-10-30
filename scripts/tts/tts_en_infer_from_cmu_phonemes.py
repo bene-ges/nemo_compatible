@@ -60,6 +60,7 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
             raw, inp = line.split("\t")
         except:
             print("bad format:", line)
+            continue
         
         # arg: list of phonemes e.g. ["AA1", "M", "AH0"]
         parsed = text_tokenizer.encode_from_g2p(inp.split(","))
