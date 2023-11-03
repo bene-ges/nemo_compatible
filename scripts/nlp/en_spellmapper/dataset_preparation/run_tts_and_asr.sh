@@ -15,13 +15,12 @@ split -n 26 tts_input.txt
 for part in "xaa" "xab" "xac" "xad" "xae" "xaf" "xag" "xah" "xai" "xaj" "xak" "xal" "xam" "xan" "xao" "xap" "xaq" "xar" "xas" "xat" "xau" "xav" "xaw" "xax" "xay" "xaz"
 do
     python ${NEMO_COMPATIBLE_PATH}/scripts/tts/tts_en_infer_from_cmu_phonemes.py --input_name $part --output_dir tts --output_manifest $part.json --sample_rate 16000
-    python ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/dataset_preparation/decode_resample.py --manifest $part.json --destination_folder tts_resample
     python ${NEMO_PATH}/examples/asr/transcribe_speech.py \
       pretrained_name="stt_en_conformer_ctc_large" \
-      dataset_manifest=${part}_decoded.json \
+      dataset_manifest=${part}.json \
       output_filename=./pred_ctc.$part.json \
       batch_size=256 \
-      cuda=1 \
+      cuda=0 \
       amp=True
 done
 
