@@ -21,7 +21,7 @@ WIKIPEDIA_FOLDER=../yago_wikipedia
 
 ## Articles with these titles will be skipped (as they are reserved for testing)
 ## To generate this file use ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/get_all_titles_from_spoken_wikipedia.py --input_folder en/en/english --output_file spoken_wiki_titles.txt
-EXCLUDE_TITLES=spoken_wiki_titles.txt
+EXCLUDE_TITLES=${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/spoken_wiki_titles.txt
 
 ## Vocabulary of aligned YAGO subphrases, allows to use not only Wikipedia titles as whole phrases, but also their parts.
 ## Preparation of this file is described in get_ngram_mappings.sh.
