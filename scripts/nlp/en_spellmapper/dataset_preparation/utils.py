@@ -12,34 +12,25 @@ from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
 )
 
 # ATTENTION: do not delete hyphen and apostrophe
-CHARS_TO_IGNORE_REGEX = re.compile(
-    r"[\.\,\?\:!;()«»…\]\[/\*–‽+&_\\½√>€™$•¼}{~—=“\"”″‟„]"
-)
+CHARS_TO_IGNORE_REGEX = re.compile(r"[\.\,\?\:!;()«»…\]\[/\*–‽+&_\\½√>€™$•¼}{~—=“\"”″‟„]")
 OOV_REGEX = "[^ '\-aiuenrbomkygwthszdcjfvplxq]"
 
 SPACE_REGEX = re.compile(r"[\u2000-\u200F]", re.UNICODE)
 APOSTROPHES_REGEX = re.compile(r"[’'‘`ʽ']")
 
-
 def preprocess_apostrophes_space_diacritics(text):
-    text = APOSTROPHES_REGEX.sub(
-        "'", text
-    )  # replace different apostrophes by one
+    text = APOSTROPHES_REGEX.sub("'", text)  # replace different apostrophes by one
     text = re.sub(r"'+", "'", text)  # merge multiple apostrophes
     text = SPACE_REGEX.sub(" ", text)  # replace different spaces by one
     text = replace_diacritics(text)
 
-    text = re.sub(
-        r" '", " ", text
-    )  # delete apostrophes at the beginning of word
+    text = re.sub(r" '", " ", text)  # delete apostrophes at the beginning of word
     text = re.sub(r"' ", " ", text)  # delete apostrophes at the end of word
     text = re.sub(r" +", " ", text)  # merge multiple spaces
     return text
 
 
-def get_title_and_text_from_json(
-    content: str, exclude_titles: Set[str]
-) -> Tuple[str, str, str]:
+def get_title_and_text_from_json(content: str, exclude_titles: Set[str]) -> Tuple[str, str, str]:
     # Example of file content
     #   {"query":
     #     {"normalized":[{"from":"O'_Coffee_Club","to":"O' Coffee Club"}],
@@ -59,7 +50,7 @@ def get_title_and_text_from_json(
         print("cannot load json from text")
         return (None, None, None)
     if "query" not in js or "pages" not in js["query"]:
-        print('no query["pages"] in ' + content)
+        print("no query[\"pages\"] in " + content)
         return (None, None, None)
     for page_key in js["query"]["pages"]:
         if page_key == "-1":
@@ -111,7 +102,7 @@ def get_paragraphs_from_json(text, exclude_titles):
         print("cannot load json from text")
         return
     if "query" not in js or "pages" not in js["query"]:
-        print('no query["pages"] in ' + text)
+        print("no query[\"pages\"] in " + text)
         return
     for page_key in js["query"]["pages"]:
         if page_key == "-1":
@@ -152,9 +143,7 @@ def load_yago_entities(input_name: str, exclude_titles: Set[str]) -> Set[str]:
     return yago_entities
 
 
-def read_custom_phrases(
-    filename: str, max_lines: int = -1, portion_size: int = -1
-) -> List[str]:
+def read_custom_phrases(filename: str, max_lines: int = -1, portion_size: int = -1) -> List[str]:
     """Reads custom phrases from input file.
     If input file contains multiple columns, only first column is used.
     """
@@ -178,20 +167,18 @@ def read_custom_phrases(
 
 
 def get_candidates_with_most_coverage(
-    phrases2positions: np.ndarray,
-    phrase_lengths: List[int],
-    max_candidates: int,
+    phrases2positions: np.ndarray, phrase_lengths: List[int], max_candidates: int
 ) -> List[Tuple[float, int, int]]:
     """Returns k candidates whose ngrams cover most of the input text (compared to the candidate length).
-    Args:
-        phrases2positions: matrix where rows are phrases columns are letters of input sentence. Value is 1 on intersection of letter ngrams that were found in index leading to corresponding phrase.
-        phrase_lengths: list of phrase lengths (to avoid recalculation)
-        max_candidates: required number of candidates
-    Returns:
-        List of tuples:
-            coverage,
-            approximate beginning position of the phrase
-            phrase id
+       Args:
+           phrases2positions: matrix where rows are phrases columns are letters of input sentence. Value is 1 on intersection of letter ngrams that were found in index leading to corresponding phrase. 
+           phrase_lengths: list of phrase lengths (to avoid recalculation)
+           max_candidates: required number of candidates
+       Returns:
+           List of tuples:
+               coverage,
+               approximate beginning position of the phrase
+               phrase id
     """
     top = []
     for i in range(max_candidates):  # add placeholders for best candidates
@@ -213,9 +200,7 @@ def get_candidates_with_most_coverage(
                 best_pos = pos
 
         coverage = max_sum / (phrase_length + 2)  # smoothing
-        if (
-            coverage > top[0][0]
-        ):  # top[0] is the smallest element in the heap, top[0][0] - smallest coverage
+        if coverage > top[0][0]:  # top[0] is the smallest element in the heap, top[0][0] - smallest coverage
             heapreplace(top, (coverage, best_pos, i))
     return top
 
@@ -224,22 +209,20 @@ def get_candidates_with_most_coverage_on_whole_input(
     phrases2positions: np.ndarray, max_candidates: int
 ) -> List[Tuple[float, int, int]]:
     """Returns k candidates whose ngrams cover most of the input text (compared to the candidate length).
-    Args:
-        phrases2positions: matrix where rows are phrases columns are letters of input sentence. Value is 1 on intersection of letter ngrams that were found in index leading to corresponding phrase.
-        max_candidates: required number of candidates
-    Returns:
-        List of tuples:
-            coverage,
-            approximate beginning position of the phrase (in case of this function always 0)
-            phrase id
+       Args:
+           phrases2positions: matrix where rows are phrases columns are letters of input sentence. Value is 1 on intersection of letter ngrams that were found in index leading to corresponding phrase. 
+           max_candidates: required number of candidates
+       Returns:
+           List of tuples:
+               coverage,
+               approximate beginning position of the phrase (in case of this function always 0)
+               phrase id
     """
     top = []
     for i in range(max_candidates):  # add placeholders for best candidates
         heappush(top, (0.0, -1, -1))
 
-    coverage = np.sum(phrases2positions, axis=1) / (
-        2 + phrases2positions.shape[1]
-    )
+    coverage = np.sum(phrases2positions, axis=1) / (2 + phrases2positions.shape[1])
     indices = np.argpartition(coverage, -max_candidates)[-max_candidates:]
 
     for i in range(max_candidates):
@@ -257,24 +240,15 @@ def get_candidates(
     min_real_coverage: float = 0.8,
     match_whole_input: bool = False,
 ) -> List[str]:
-    phrases2positions, position2ngrams = search_in_index(
-        ngram2phrases, phrases, letters
-    )
+    phrases2positions, position2ngrams = search_in_index(ngram2phrases, phrases, letters)
     if match_whole_input:
-        top = get_candidates_with_most_coverage_on_whole_input(
-            phrases2positions, 3 * max_candidates
-        )
+        top = get_candidates_with_most_coverage_on_whole_input(phrases2positions, 3 * max_candidates)
     else:
-        top = get_candidates_with_most_coverage(
-            phrases2positions, phrase_lengths, 3 * max_candidates
-        )
+        top = get_candidates_with_most_coverage(phrases2positions, phrase_lengths, 3 * max_candidates)
 
     top_sorted = sorted(top, key=lambda item: item[0], reverse=True)
     # mask for each custom phrase, how many which symbols are covered by input ngrams
-    phrases2coveredsymbols = [
-        [0 for x in phrases[top_sorted[i][2]].split(" ")]
-        for i in range(len(top_sorted))
-    ]
+    phrases2coveredsymbols = [[0 for x in phrases[top_sorted[i][2]].split(" ")] for i in range(len(top_sorted))]
     candidates = []
     i = -1
     for coverage, begin, idx in top_sorted:
@@ -293,9 +267,7 @@ def get_candidates(
                             break
                         phrases2coveredsymbols[i][ppos] = 1
 
-        real_coverage = sum(phrases2coveredsymbols[i]) / len(
-            phrases2coveredsymbols[i]
-        )
+        real_coverage = sum(phrases2coveredsymbols[i]) / len(phrases2coveredsymbols[i])
         if real_coverage < min_real_coverage:
             continue
         candidates.append(phrases[idx])
