@@ -80,7 +80,7 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/pr
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/sample_phrases.py \
   --input_name yago_wiki.txt \
   --max_count 10 \
-  --each_n_line 30 \ 
+  --each_n_line 30 \
   --output_phrases_name yago_wiki_sample.phrases \
   --output_paragraphs_name yago_wiki_sample.paragraphs
 
