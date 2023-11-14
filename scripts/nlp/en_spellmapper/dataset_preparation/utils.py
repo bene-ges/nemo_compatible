@@ -1,8 +1,15 @@
-import re
-
 """Utility functions for English SpellMapper(Spellchecking ASR Customization) data preparation"""
 
-from nemo.collections.nlp.data.spellchecking_asr_customization.utils import replace_diacritics
+import json
+import re
+from heapq import heappush, heapreplace
+from typing import Dict, List, Set, Tuple
+
+import numpy as np
+from nemo.collections.nlp.data.spellchecking_asr_customization.utils import (
+    replace_diacritics,
+    search_in_index,
+)
 
 # ATTENTION: do not delete hyphen and apostrophe
 CHARS_TO_IGNORE_REGEX = re.compile(r"[\.\,\?\:!;()«»…\]\[/\*–‽+&_\\½√>€™$•¼}{~—=“\"”″‟„]")
