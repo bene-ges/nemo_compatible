@@ -1,3 +1,5 @@
+DATASET=data_folder_example  #Replace with your actual folder where your train.tsv is located
+
 ## Generate necessary configs
 ## This is config of huawei-noah/TinyBERT_General_6L_768D    with type_vocab_size changed from 2 to 11 to support multiple separators
 echo "{
@@ -18,7 +20,7 @@ echo "{
   \"vocab_size\": 30522
 }
 
-" > ../bert/datasets/${DATASET}/config.json
+" > ${DATASET}/config.json
 
 ## This is the set of possible target labels (0 - no replacements, 1-10 - replacement with candidate id)
 echo "0
@@ -32,10 +34,9 @@ echo "0
 8
 9
 10
-" > ../bert/datasets/${DATASET}/label_map.txt
+" > ${DATASET}/label_map.txt
 
 ## This is an auxiliary span labels needed for validation
 echo "PLAIN
 CUSTOM
-" > ../bert/datasets/${DATASET}/semiotic_classes.txt
-
+" > ${DATASET}/semiotic_classes.txt
