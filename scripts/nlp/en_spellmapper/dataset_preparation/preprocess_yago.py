@@ -54,9 +54,9 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
                 continue
             sp = replace_diacritics(sp)
             sp = "_".join(sp.split())
-            if len(set(list(sp)) - set(list(" -'abcdefghijklmnopqrstuvwxyz"))) == 0:
+            if len(set(list(sp)) - set(list("_-'abcdefghijklmnopqrstuvwxyz"))) == 0:
                 out.write(key + "\t" + sp + "\n")
             else:
-                print(str(set(list(sp)) - set(list(" -'abcdefghijklmnopqrstuvwxyz"))))
+                print(str(set(list(sp)) - set(list("_-'abcdefghijklmnopqrstuvwxyz"))))
 
 out.close()
