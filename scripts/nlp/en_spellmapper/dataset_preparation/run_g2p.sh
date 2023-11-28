@@ -18,7 +18,7 @@ python ${NEMO_PATH}/examples/nlp/text_normalization_as_tagging/normalization_as_
   inference.batch_size=256 \
   lang=en
 
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_tts.py --yago_input_name yago.uniq3 --phonematic_name yago.vocab.to_cmu.output --output_name tts_input.txt
+python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_tts.py --yago_input_name yago.uniq2 --phonematic_name yago.vocab.to_cmu.output --output_name tts_input.txt
 
 ## tts_input.txt should have the following format (space is also a phoneme)
 ## aadityana       AA0,AA2,D,AH0,T,Y,AE1,N,AH0

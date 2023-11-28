@@ -20,8 +20,8 @@ YAGO_ENTITIES=yago.uniq2
 WIKIPEDIA_FOLDER=../yago_wikipedia
 
 ## Articles with these titles will be skipped (as they are reserved for testing)
-## To generate this file use ${NEMO_PATH}/examples/nlp/spellchecking_asr_customization/evaluation/get_all_titles_from_spoken_wikipedia.py --input_folder en/en/english --output_file spoken_wiki_titles.txt
-EXCLUDE_TITLES=spoken_wiki_titles.txt
+## To generate this file use ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/get_all_titles_from_spoken_wikipedia.py --input_folder en/en/english --output_file spoken_wiki_titles.txt
+EXCLUDE_TITLES=${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/spoken_wiki_titles.txt
 
 ## Vocabulary of aligned YAGO subphrases, allows to use not only Wikipedia titles as whole phrases, but also their parts.
 ## Preparation of this file is described in get_ngram_mappings.sh.
@@ -80,7 +80,7 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/pr
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/sample_phrases.py \
   --input_name yago_wiki.txt \
   --max_count 10 \
-  --each_n_line 30 \ 
+  --each_n_line 30 \
   --output_phrases_name yago_wiki_sample.phrases \
   --output_paragraphs_name yago_wiki_sample.paragraphs
 
@@ -232,7 +232,9 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/ma
 ## t _ v _ o r _ e y e _ o n _ t h e _ f i r s t _ o f _ f e b r u a r y _ o f _ t h a t _ y e a r _ s _ b _ c _ c e l e b r a t e d       t v r _ t u s c a n;t h e _ f i r s t _ e d e n;w s p c;s b c _ p u b l i s h i n g _ b u i l d i n g;t v r _ g r a n t u r a;t v r i;s b c;s o a e b _ t a i;d u y a r;f i n t h e n     6 7     CUSTOM 0 10;CUSTOM 49 54
 ## d i s t r i c t _ o f _ a f g h a n i s t a n   d i s t r i c t _ o f _ p r i s t i n a;f e n i _ d i s t r i c t;d i s t r i c t _ o f _ l o u i s i a n a;m o r g a n _ s t a n l e y;f l a g _ o f _ a f g h a n i s t a n;u n a _ d i s t r i c t;z i r c _ d i s t r i c t;f i n n _ f u g l e s t a d;p h l o _ f i n i s t e r;g u s t a f _ a u l e n     0
 
-tail -n 20000 all.tsv > test.tsv
+N_TEST_EXAMPLES=20000
+tail -n ${N_TEST_EXAMPLES} all.tsv > test.tsv
+head -n -${N_TEST_EXAMPLES} all.tsv > train.tsv
 ## take all other lines to train.tsv
 
 ## To generate files config.json, label_map.txt, semiotic_classes.txt, run generate_configs.sh

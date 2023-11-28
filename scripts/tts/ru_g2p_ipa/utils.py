@@ -18,6 +18,7 @@ def clean_russian_text_for_tts(text: str) -> str:
     result = result.casefold()  # lowercase
     result = result.replace("ё", "е")
     result = result.replace("\u2011", "-")  # non-breaking hyphen
+    result = result.replace("\u2013", "-")  # en dash
     result = result.replace("\u2014", "-")  # em dash
     result = result.replace("\u2026", ".")  # horizontal ellipsis
     result = result.replace("\u00ab", "\"")  # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK

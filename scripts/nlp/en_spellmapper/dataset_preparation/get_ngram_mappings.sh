@@ -5,6 +5,12 @@ ALIGNMENT_DIR=align
 GIZA_BIN_DIR=giza-pp/GIZA++-v2
 MCKLS_BINARY=giza-pp/mkcls-v2/mkcls
 
+## Install GIZA++ if you don't have it
+# git clone https://github.com/moses-smt/giza-pp.git giza-pp
+# cd giza-pp
+# make
+# cd ..
+
 mkdir ${ALIGNMENT_DIR}
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_giza.py \
   --input_manifest pred_ctc.all.json \

@@ -56,7 +56,11 @@ with open(args.input_name, "r", encoding="utf-8") as inp:
     for line in inp:
         # jocelyn geffert \t JH,AO1,S,L,IH0,N, ,G,EH1,F,ER0,T 
         line = line.strip()
-        raw, inp = line.split("\t")
+        try:
+            raw, inp = line.split("\t")
+        except:
+            print("bad format:", line)
+            continue
         
         # arg: list of phonemes e.g. ["AA1", "M", "AH0"]
         parsed = text_tokenizer.encode_from_g2p(inp.split(","))

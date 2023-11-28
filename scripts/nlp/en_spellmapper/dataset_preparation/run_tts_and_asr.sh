@@ -21,7 +21,9 @@ do
       pretrained_name="stt_en_conformer_ctc_large" \
       dataset_manifest=${part}.json \
       output_filename=./pred_ctc.$part.json \
-      batch_size=256
+      batch_size=256 \
+      cuda=0 \
+      amp=True
 done
 
 cat pred_ctc.x*.json > pred_ctc.all.json
