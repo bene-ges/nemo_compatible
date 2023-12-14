@@ -1,128 +1,33 @@
+## This script shows how to use WIKI-EN-ASR-ADAPT dataset to generate training data for SpellMapper model.
+
 NEMO_COMPATIBLE_PATH=nemo_compatible
 
-## Wikipedia titles taken from YAGO corpus. Preparation of this file is described in preprocess_yago.sh.
-## Format: original title, and clean
-##    Żywkowo,_Podlaskie_Voivodeship         zywkowo_podlaskie_voivodeship
-##    Żywkowo,_Warmian-Masurian_Voivodeship  zywkowo_warmian-masurian_voivodeship
-##    Żywocice                               zywocice
-##    ZYX                                    zyx
-##    Zyx_(cartoonist)                       zyx_cartoonist
-##    ZyX_(company)                          zyx_company
-YAGO_ENTITIES=yago.uniq2
-
-## Preparation of this folder is described in preprocess_yago.sh. Its structure looks like this
-##  ├── part_xaa.tar.gz
-##  ├── ...
-##  └── part_xeс.tar.gz
-## Names do not matter, each tar.gz contains multiple downloaded articles, each in a separate json file 
-WIKIPEDIA_FOLDER=../yago_wikipedia
-
-## Articles with these titles will be skipped (as they are reserved for testing)
-## To generate this file use ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/evaluation/get_all_titles_from_spoken_wikipedia.py --input_folder en/en/english --output_file spoken_wiki_titles.txt
-EXCLUDE_TITLES=${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/spoken_wiki_titles.txt
+git clone https://huggingface.co/datasets/bene-ges/wiki-en-asr-adapt
 
 ## Vocabulary of aligned YAGO subphrases, allows to use not only Wikipedia titles as whole phrases, but also their parts.
 ## Preparation of this file is described in get_ngram_mappings.sh.
-SUBMISSPELLS=sub_misspells.txt
+SUBMISSPELLS=wiki-en-asr-adapt/Keys2Corruptions.txt   #sub_misspells.txtx
 
 ## Vocabulary of n-gram mappings
 ## Preparation of this file is described in get_ngram_mappings.sh.
-NGRAM_MAPPINGS=replacement_vocab_filt.txt
+NGRAM_MAPPINGS=wiki-en-asr-adapt/NgramMappings.txt    #replacement_vocab_filt.txt
 
-## Generate a file with IDF (inverse document frequencies) for words and short phrases.
-## It is used in later steps to filter out frequent phrases.
-## Format: phrase, idf, number of documents in which phrase occured
-## in the  0.32193097471545545     2305627
-## was     0.32511695805297663     2298293
-## of the  0.3559607516604808      2228487
-## ...
-## emmanuel episcopal church       13.586499828372018      4
-## cornewall       13.586499828372018      4
-## george bryan    13.586499828372018      4
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_idf_from_yago_wiki.py \
-  --input_folder ${WIKIPEDIA_FOLDER} \
-  --sub_misspells_file sub_misspells.txt \
-  --output_file idf.txt
+FALSE_POSITIVES=wiki-en-asr-adapt/FalsePositives.txt    #false_positives.txt
 
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_capitalization_from_yago_wiki.py \
-  --input_folder ../yago_wikipedia \
-  --sub_misspells_file sub_misspells.txt \
-  --output_file phrase_capitalization.txt
+RELATED_PHRASES=wiki-en-asr-adapt/Keys2Related.txt    #related_phrases.txt
 
-## download list of 200k proper names
-wget https://raw.githubusercontent.com/FinNLP/humannames/master/list.txt
+YAGO_WIKI=wiki-en-asr-adapt/Keys2Paragraphs.txt    #yago_wiki.txt
 
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_false_positive_examples.py \
-  --sub_misspells_file sub_misspells.txt \
-  --idf_file idf.txt \
-  --capitalization_file phrase_capitalization.txt \
-  --proper_names_file list.txt \
-  --output_file false_positives.txt
-
-
-## Find Yago entities and its subphrases in full text paragraphs of Wikipedia articles.
-## Generates a large file yago_wiki.txt of format: list of words/phrases that occured in given paragraph, paragraph text (original case, not normalized).
-## boardman        Boardman, Samuel Lane (1903). The Naturalist of the Saint Croix. Memoir of George A. Boardman. Bangor: Privately printed.
-## gelclair;undiluted      Gelclair is usually used 3 times a day or as needed. It is usually diluted with water and rinsed around the mouth. It can be used undiluted where no water is available, and applied directly.
-## gelclair;painkillers;mucositis       Gelclair does not numb the mouth and can be used in conjunction with other treatment options for managing oral mucositis, including antibacterial mouthwashes and painkillers.
-## geographic coordinate conversion;geodetic datum      In geodesy, geographic coordinate conversion is defined as translation among different coordinate formats or map projections all referenced to the same geodetic datum. A geographic coordinate transformation is a translation among different geodetic datums. Both geographic coordinate conversion and transformation will be considered in this article.
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_sentences_from_yago_wiki.py \
-  --input_folder ${WIKIPEDIA_FOLDER} \
-  --exclude_titles_file ${EXCLUDE_TITLES} \
-  --yago_entities_file ${YAGO_ENTITIES} \
-  --sub_misspells_file ${SUBMISSPELLS} \
-  --idf_file idf.txt \
-  --output_file yago_wiki.txt
-
-## Take a sample from yago_wiki.txt file.
+## Take a sample from  yago_wiki.txt file.
 ## Sampling is controlled by parameters --each_n_line (skip other) and --max_count (skips paragraph if all its phrases already occured at least as many times)
 ## Phrase lists and paragraphs are written to separate files with equal number of lines 
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/sample_by_max_count.py \
-  --input_name yago_wiki.txt \
+  --input_name ${YAGO_WIKI} \
   --max_count 5 \
   --output_name yago_wiki_sample.txt
 
 awk 'BEGIN {FS="\t"}{print $1}' < yago_wiki_sample.txt > yago_wiki_sample.phrases
 awk 'BEGIN {FS="\t"}{print $2}' < yago_wiki_sample.txt > yago_wiki_sample.paragraphs
-
-## Build an index for phrases and subphrases to later find similar candidates. 
-## This script will generate several independent portions of index.
-## The next script get_related_phrases.py will process each portion independently, thus it won't find related phrases from other portions
-## This is not ideal, but will provide randomness which is not bad.
-## Because the goal is not to find all related phrases but some of them to serve as negative candidates
-## ATTENTION: while indexing we use much stricter logprob threshold than at inference (because of too many phrases)
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/index_phrases.py \
-  --input_file ${SUBMISSPELLS} \
-  --output_file index.txt \
-  --ngram_mapping ${NGRAM_MAPPINGS} \
-  --min_log_prob -1.0 \
-  --max_phrases_per_ngram 400 \
-  --max_misspelled_freq 50000 \
-  --portion_size 150000
-
-## ATTENTION: edit depending on how many portions you get 
-for part in "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22" "23" "24" "25" "26" "27" "28" "29" "30" "31" "32" "33" "34" "35" "36" "37" "38"
-do
-    python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/get_related_phrases.py --input_file index.txt.${part} --output_file related_phrases.${part}.txt
-done
-
-cat related_phrases.*.txt > related_phrases.txt
-
-## The file related_phrases.txt will be used later to sample some negative candidates which are somewhat similar to correct ones
-## Format: correct, similar, similarity score
-## adelshoffen     adelshofen      10
-## adelshoffen     adelshof        7
-## adelshoffen     albertshofen    7
-## adelshoffen     aiterhofen      6
-## adelshoffen     waltenhofen     6
-## adam_welsh      adam_welsh      9
-## adam_welsh      adam_walsh      8
-## adam_welsh      adam_welichowski        7
-## adam_welsh      adam_wehsely-swiczinsky 7
-## adam_welsh      adam_westall    6
-## ab_welsh        ab_welsh        8
-## ab_welsh        adam_welsh      6
-## ab_welsh        alan_welsh      6
 
 ## Vocabulary from Google Text Normalization Dataset.
 ## It is used here to perform a simple fast text normalization by substitution.
@@ -168,9 +73,9 @@ python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/ge
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/construct_positive_and_negative_examples.py \
   --non_empty_fragments_file fragments_non_empty.txt \
   --empty_fragments_file fragments_empty.txt \
-  --related_phrases_file related_phrases.txt \
+  --related_phrases_file ${RELATED_PHRASES} \
   --sub_misspells_file ${SUBMISSPELLS} \
-  --false_positives_file false_positives.txt \
+  --false_positives_file ${FALSE_POSITIVES} \
   --output_file_positive positive.txt \
   --output_file_negative negative.txt
 

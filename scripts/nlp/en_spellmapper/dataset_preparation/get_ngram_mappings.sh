@@ -1,41 +1,47 @@
 NEMO_PATH=NeMo
+NEMO_COMPATIBLE_PATH=nemo_compatible
+
 
 ALIGNMENT_DIR=align
 ## path to GIZA++ and mkcls binaries
 GIZA_BIN_DIR=giza-pp/GIZA++-v2
 MCKLS_BINARY=giza-pp/mkcls-v2/mkcls
 
-## Install GIZA++ if you don't have it
-# git clone https://github.com/moses-smt/giza-pp.git giza-pp
-# cd giza-pp
-# make
-# cd ..
+## asr*.json files are outputs of different asr models
+## you can download them from https://huggingface.co/datasets/bene-ges/wiki-en-asr-adapt
+for part in "asr1" "asr2" "asr3" "asr4" "asr5"
+do
+  mkdir ${ALIGNMENT_DIR}_${part}
+  python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_giza.py \
+    --input_manifest ${part}.json \
+    --output_name giza_input.${part}.txt \
+    --out_dir=${ALIGNMENT_DIR}_${part} \
+    --giza_dir=${GIZA_BIN_DIR} \
+    --mckls_binary=${MCKLS_BINARY}
 
-mkdir ${ALIGNMENT_DIR}
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_input_for_giza.py \
-  --input_manifest pred_ctc.all.json \
-  --output_name giza_input.txt \
-  --out_dir=${ALIGNMENT_DIR} \
-  --giza_dir=${GIZA_BIN_DIR} \
-  --mckls_binary=${MCKLS_BINARY}
+  awk 'BEGIN {FS="\t"} {print $1}' < giza_input.${part}.txt > ${ALIGNMENT_DIR}_${part}/src
+  awk 'BEGIN {FS="\t"} {print $2}' < giza_input.${part}.txt > ${ALIGNMENT_DIR}_${part}/dst
+  chmod +x ${ALIGNMENT_DIR}_${part}/run.sh
+done
 
-awk 'BEGIN {FS="\t"} {print $1}' < giza_input.txt > ${ALIGNMENT_DIR}/src
-awk 'BEGIN {FS="\t"} {print $2}' < giza_input.txt > ${ALIGNMENT_DIR}/dst
-chmod +x ${ALIGNMENT_DIR}/run.sh
+## Run Giza++ alignment from each dir
+##cd ${ALIGNMENT_DIR}
+##./run.sh
+##cd ..
 
-## Run Giza++ alignment
-cd ${ALIGNMENT_DIR}
-./run.sh
-cd ..
+for part in "asr1" "asr2" "asr3" "asr4" "asr5"
+do
+  python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
+    --mode=extract_alignments \
+    --input_name=${ALIGNMENT_DIR}_${part} \
+    --output_name=${ALIGNMENT_DIR}_${part}/align.out
+done
 
-python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
-  --mode=extract_alignments \
-  --input_name=${ALIGNMENT_DIR} \
-  --output_name=${ALIGNMENT_DIR}/align.out
+cat ${ALIGNMENT_DIR}_*/align.out > align.out
 
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
   --mode=get_replacement_vocab \
-  --input_name=${ALIGNMENT_DIR}/align.out \
+  --input_name=align.out \
   --output_name=replacement_vocab_full.txt
 
 awk 'BEGIN {FS="\t"}($3 / $4 > 0.005){print $0}' < replacement_vocab_full.txt > replacement_vocab_filt.txt
@@ -58,10 +64,10 @@ awk 'BEGIN {FS="\t"}($3 / $4 > 0.005){print $0}' < replacement_vocab_full.txt > 
 ## domchor domer   1       6       9
 python ${NEMO_COMPATIBLE_PATH}/scripts/nlp/en_spellmapper/dataset_preparation/prepare_corpora_after_alignment.py \
   --mode=get_sub_misspells \
-  --input_name=${ALIGNMENT_DIR}/align.out \
+  --input_name=align.out \
   --output_name=sub_misspells.txt
 
 ## This file will be used later during synthetic data generation to use not only Wikipedia titles as whole phrases, but also their parts.
 
-awk 'BEGIN {FS="\t"}{print $1 "\t" $4}' < sub_misspells.txt > big_sample.txt
+awk 'BEGIN {FS="\t"}{print $1 "\t" $4}' < sub_misspells.txt | sort -u > big_sample.txt
 
