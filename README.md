@@ -5,6 +5,7 @@
 
 ## Recipes
 - `scripts/tts/ru_ipa_fastpitch_hifigan/train.sh` - recipe for data preparation and training of Russian TTS (FastPitch + HifiGAN), using external G2P model.
+- `scripts/nlp/en_spellmapper` - Spellchecking model for English ASR Customization.
 
 ## Utilities
 - `scripts/tts/en_g2p_cmu/infer.sh` - example on how to run inference with English G2P model (converts to phonemes in CMU format).
